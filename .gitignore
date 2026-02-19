@@ -1,0 +1,56 @@
+## Build artifacts
+bin/
+obj/
+
+## Visual Studio / Rider
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## ASP.NET Core
+*.db
+*.db-shm
+*.db-wal
+
+## Logs
+*.log
+
+## Compiled DLLs / EXEs
+*.dll
+*.exe
+*.pdb
+*.cache
+*.mdb
+
+## Generated files
+*.GeneratedMSBuildEditorConfig.editorconfig
+*.AssemblyInfo.cs
+*.AssemblyInfoInputs.cache
+*.FileListAbsolute.txt
+*.genruntimeconfig.cache
+*.sourcelink.json
+
+## Static Web Assets
+**/staticwebassets.build.json
+**/staticwebassets.development.json
+**/staticwebassets.pack.json
+**/staticwebassets/
+
+## NuGet
+*.nupkg
+*.snupkg
+project.assets.json
+project.nuget.cache
+*.nuget.dgspec.json
+*.nuget.g.props
+*.nuget.g.targets
+
+## Rider-specific
+*.rider.project.model.nuget.info
+*.rider.project.restore.info
+
+## Publish output
+publish/
