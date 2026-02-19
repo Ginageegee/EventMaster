@@ -2,25 +2,25 @@
 
 <h2>Create Event</h2>
 
-<form asp-action="CreateEvent" method="post">
+<form method="post">
     <div class="form-group">
         <label>Event Name</label>
-        <input asp-for="Name" class="form-control" />
+        <input asp-for="EventName" class="form-control" />
     </div>
 
     <div class="form-group">
         <label>Description</label>
-        <textarea asp-for="Description" class="form-control"></textarea>
+        <textarea asp-for="EventDescription" class="form-control"></textarea>
     </div>
 
     <div class="form-group">
         <label>Date</label>
-        <input asp-for="Date" type="date" class="form-control" />
+        <input asp-for="EventDate" type="date" class="form-control" />
     </div>
 
     <div class="form-group">
-        <label>Price</label>
-        <input asp-for="Price" type="number" class="form-control" />
+        <label>Time</label>
+        <input asp-for="EventTime" type="time" class="form-control" />
     </div>
 
     <button type="submit" class="btn btn-primary">Create Event</button>

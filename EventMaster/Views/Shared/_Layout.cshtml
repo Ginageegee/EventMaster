@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@using EventMaster.Models
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
@@ -28,12 +31,19 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Login</a>
+                        <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">Register</a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link text-dark" asp-controller="Dashboard" asp-action="Index">Staff Dashboard</a>
+                        <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Login</a>
                     </li>
+
+                    @if (HttpContextAccessor.HttpContext.Session.GetString("UserRole") == Roles.Organizer)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Dashboard" asp-action="Index">Organizer Dashboard</a>
+                        </li>
+                    }
 
                     <li class="nav-item">
                         <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>

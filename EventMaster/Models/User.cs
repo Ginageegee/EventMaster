@@ -8,7 +8,10 @@ public class User
     public string LastName { get; set; }
     
     public string Email { get; set; }
-    private string passwordHash { get; set; }
+    //Hash later
+    //private string passwordHash { get; set; }
+    public string Password { get; set; }
+    public string Role { get; set; } = Roles.Attendee;
     
     public ICollection<Event> EventsCreated { get; set; }
     public ICollection<Order> Orders { get; set; } = new List<Order>();
