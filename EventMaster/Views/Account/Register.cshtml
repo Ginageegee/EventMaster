@@ -1,37 +1,42 @@
-@using static EventMaster.Models.Roles
 @model EventMaster.Models.User
+@using EventMaster.Models
 
-<h2>Create Account</h2>
+@{
+    ViewData["Title"] = "Register";
+}
 
-<form method="post">
-    <div class="form-group">
-        <label>First Name</label>
+<h2 class="mb-3">Create Account</h2>
+
+<form asp-controller="Account" asp-action="Register" method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label class="form-label">First Name</label>
         <input asp-for="FirstName" class="form-control" />
     </div>
 
-    <div class="form-group">
-        <label>Last Name</label>
+    <div class="mb-3">
+        <label class="form-label">Last Name</label>
         <input asp-for="LastName" class="form-control" />
     </div>
 
-    <div class="form-group">
-        <label>Email</label>
-        <input asp-for="Email" class="form-control" />
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input asp-for="Email" class="form-control" autocomplete="email" />
     </div>
 
-    <div class="form-group">
-        <label>Password</label>
-        <input asp-for="Password" type="password" class="form-control" />
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input asp-for="Password" type="password" class="form-control" autocomplete="new-password" />
     </div>
 
-    <div class="form-group">
-        <label>Role</label>
-        <select asp-for="Role" class="form-control">
+    <div class="mb-3">
+        <label class="form-label">Role</label>
+        <select asp-for="Role" class="form-select">
             <option value="@Roles.Attendee">Attendee</option>
             <option value="@Roles.Organizer">Organizer</option>
         </select>
-
     </div>
 
-    <button type="submit" class="btn btn-primary">Register</button>
+    <button type="submit" class="btn btn-success">Register</button>
 </form>

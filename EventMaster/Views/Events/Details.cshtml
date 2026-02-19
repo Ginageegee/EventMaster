@@ -1,0 +1,52 @@
+@model EventMaster.ViewModels.EventDetailsViewModel
+@{
+    ViewData["Title"] = Model.Event.EventName;
+    var ev = Model.Event;
+}
+
+<h2 class="mb-1">@ev.EventName</h2>
+<div class="text-muted mb-3">
+    @ev.EventDate.ToString("yyyy-MM-dd") @ev.EventTime.ToString("HH:mm")
+</div>
+
+<p>@ev.EventDescription</p>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<hr />
+<h4 class="mb-3">Tickets</h4>
+
+@if (Model.TicketTypes.Count == 0)
+{
+    <p class="text-muted">No ticket types available yet.</p>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var tt in Model.TicketTypes)
+        {
+            var available = tt.QuantityAvailable ?? 0;
+
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="fw-semibold">@tt.Name</div>
+                    <div class="text-muted small">$@tt.Price.ToString("0.00") • @available available</div>
+                </div>
+
+                <form asp-controller="Tickets" asp-action="Purchase" method="post" class="d-flex gap-2">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ticketTypeId" value="@tt.TicketTypeId" />
+                    <input type="number" name="quantity" value="1" min="1" max="10" class="form-control" style="width:90px" />
+                    <button class="btn btn-success" type="submit" @(available <= 0 ? "disabled" : null)>Buy</button>
+                </form>
+            </div>
+        }
+    </div>
+}
+
+<div class="mt-4">
+    <a asp-action="Index" class="btn btn-link">← Back to events</a>
+</div>

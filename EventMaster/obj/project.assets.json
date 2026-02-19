@@ -8,24 +8,26 @@
     "net8.0": []
   },
   "packageFolders": {
-    "C:\\Users\\Scove\\.nuget\\packages\\": {}
+    "C:\\Users\\Vincent\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\EventMaster\\EventMaster.csproj",
+      "projectUniqueName": "C:\\Users\\Vincent\\vsstudio\\EventMaster\\EventMaster\\EventMaster\\EventMaster.csproj",
       "projectName": "EventMaster",
-      "projectPath": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\EventMaster\\EventMaster.csproj",
-      "packagesPath": "C:\\Users\\Scove\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\EventMaster\\obj\\",
+      "projectPath": "C:\\Users\\Vincent\\vsstudio\\EventMaster\\EventMaster\\EventMaster\\EventMaster.csproj",
+      "packagesPath": "C:\\Users\\Vincent\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Vincent\\vsstudio\\EventMaster\\EventMaster\\EventMaster\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\Scove\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\Vincent\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -67,7 +69,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.301/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

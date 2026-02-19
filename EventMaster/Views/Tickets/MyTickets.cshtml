@@ -1,0 +1,41 @@
+@model IReadOnlyList<EventMaster.ViewModels.TicketReceipt>
+@{
+    ViewData["Title"] = "My Tickets";
+}
+
+<h2 class="mb-3">My Tickets</h2>
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">
+        No tickets yet. Head over to the <a asp-controller="Events" asp-action="Index">events list</a>.
+    </p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+            <tr>
+                <th>Event</th>
+                <th>Type</th>
+                <th>Qty</th>
+                <th>Total</th>
+                <th>Purchased</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var r in Model)
+            {
+                <tr>
+                    <td>@r.EventName</td>
+                    <td>@r.TicketTypeName</td>
+                    <td>@r.Quantity</td>
+                    <td>$@r.Total.ToString("0.00")</td>
+                    <td>@r.PurchasedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,42 @@
+@model EventMaster.ViewModels.TicketReceipt
+@{
+    ViewData["Title"] = "Purchase Confirmed";
+}
+
+<h2 class="mb-2">Purchase Confirmed ✅</h2>
+
+<p class="text-muted mb-4">
+    Receipt: <span class="font-monospace">@Model.ReceiptId</span>
+    • Purchased @Model.PurchasedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+</p>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title mb-1">@Model.EventName</h5>
+        <div class="text-muted">@Model.TicketTypeName • x@Model.Quantity</div>
+
+        <hr />
+
+        <div class="d-flex justify-content-between">
+            <span>Unit price</span>
+            <span>$@Model.UnitPrice.ToString("0.00")</span>
+        </div>
+        <div class="d-flex justify-content-between fw-semibold">
+            <span>Total</span>
+            <span>$@Model.Total.ToString("0.00")</span>
+        </div>
+    </div>
+</div>
+
+<h5>Your ticket number(s)</h5>
+<ul class="list-group mb-4">
+    @foreach (var num in Model.TicketNumbers)
+    {
+        <li class="list-group-item"><span class="font-monospace">@num</span></li>
+    }
+</ul>
+
+<div class="d-flex gap-2">
+    <a class="btn btn-primary" asp-controller="Tickets" asp-action="MyTickets">My Tickets</a>
+    <a class="btn btn-outline-secondary" asp-controller="Events" asp-action="Details" asp-route-id="@Model.EventId">Back to Event</a>
+</div>
