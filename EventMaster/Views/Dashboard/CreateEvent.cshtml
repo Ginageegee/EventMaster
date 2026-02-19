@@ -1,0 +1,27 @@
+@model EventMaster.Models.Event
+
+<h2>Create Event</h2>
+
+<form asp-action="CreateEvent" method="post">
+    <div class="form-group">
+        <label>Event Name</label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>Description</label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Date</label>
+        <input asp-for="Date" type="date" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>Price</label>
+        <input asp-for="Price" type="number" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create Event</button>
+</form>
