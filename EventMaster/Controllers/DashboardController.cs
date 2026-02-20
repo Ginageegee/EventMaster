@@ -12,7 +12,14 @@ public class DashboardController : Controller
         if (HttpContext.Session.GetString("UserRole") != Roles.Organizer)
             return RedirectToAction("Login", "Account");
 
-        return View();
+        var model = new Event
+        {
+            OrganizerId = int.Parse(HttpContext.Session.GetString("UserId")),
+            VenueId = null // or default venue if you want
+        };
+
+        return View(model);
+
     }
 
     // POST: /Dashboard/CreateEvent
@@ -22,22 +29,12 @@ public class DashboardController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        model.EventId = InMemoryStore.NextEventId();
         model.OrganizerId = int.Parse(HttpContext.Session.GetString("UserId"));
-
+        model.EventTime = model.EventDate.Date
+            .AddHours(model.EventTime.Hour)
+            .AddMinutes(model.EventTime.Minute);
+        
         InMemoryStore.AddEvent(model);
-
-        // Add default ticket type
-        var ticketType = new TicketType
-        {
-            TicketTypeId = InMemoryStore.NextTicketTypeId(),
-            EventId = model.EventId,
-            Name = "General Admission",
-            Price = 25,
-            QuantityAvailable = 100
-        };
-
-        InMemoryStore.AddTicketType(ticketType);
 
         return RedirectToAction("Index");
     }
@@ -46,11 +43,14 @@ public class DashboardController : Controller
     {
         if (HttpContext.Session.GetString("UserRole") != Roles.Organizer)
             return RedirectToAction("Login", "Account");
-        
-        int organizerId = int.Parse(HttpContext.Session.GetString("UserId"));
+    
+        var userIdString = HttpContext.Session.GetString("UserId");
+        if (string.IsNullOrEmpty(userIdString))
+            return RedirectToAction("Login", "Account");
 
+        int organizerId = int.Parse(userIdString);
         var myEvents = InMemoryStore.GetEventsForOrganizer(organizerId);
 
-        return View();
+        return View(myEvents);
     }
 }

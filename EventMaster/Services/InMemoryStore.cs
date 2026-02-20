@@ -99,7 +99,7 @@ public static class InMemoryStore
 
             var organizer = new User
             {
-                UserId = 1,
+                UserId = 3,
                 FirstName = "Demo",
                 LastName = "Organizer",
                 Email = "organizer@eventmaster.local",
@@ -123,7 +123,7 @@ public static class InMemoryStore
             EventName = name,
             EventDescription = desc,
             EventDate = date,
-            EventTime = DateTime.Today.Add(time),
+            EventTime = date.Add(time),
             OrganizerId = organizer.UserId,
             Organizer = organizer
         };
@@ -180,8 +180,14 @@ public static class InMemoryStore
 
     public static void AddEvent(Event ev)
     {
-        EnsureInitialized();
-        lock (Sync) Events.Add(ev);
+        AddSeedEvent(
+            ev.Organizer,
+            ev.EventName,
+            ev.EventDescription,
+            ev.EventDate,
+            ev.EventTime.TimeOfDay
+        );
+
     }
 
     public static void AddTicketType(TicketType tt)

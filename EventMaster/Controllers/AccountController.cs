@@ -15,6 +15,7 @@ namespace EventMaster.Controllers
 
             Users.Add(new User
             {
+                UserId = 1,
                 FirstName = "Test",
                 LastName = "Attendee",
                 Email = "attendee@eventmaster.com",
@@ -25,6 +26,7 @@ namespace EventMaster.Controllers
 
             Users.Add(new User
             {
+                UserId = 2,
                 FirstName = "Test",
                 LastName = "Organizer",
                 Email = "organizer@eventmaster.com",
@@ -107,7 +109,8 @@ namespace EventMaster.Controllers
             // Store user in session
             HttpContext.Session.SetString("UserEmail", user.Email);
             HttpContext.Session.SetString("UserRole", user.Role);
-
+            HttpContext.Session.SetString("UserId", user.UserId.ToString());
+            
             return user.Role == Roles.Organizer
                 ? RedirectToAction("Index", "Dashboard")
                 : RedirectToAction("Index", "Home");
