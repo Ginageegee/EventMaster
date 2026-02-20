@@ -152,4 +152,41 @@ public static class InMemoryStore
             QuantityAvailable = 30
         });
     }
+    
+    public static IReadOnlyList<Event> GetEventsForOrganizer(int organizerId)
+    {
+        EnsureInitialized();
+        lock (Sync)
+        {
+            return Events
+                .Where(e => e.OrganizerId == organizerId)
+                .OrderBy(e => e.EventDate)
+                .ThenBy(e => e.EventTime)
+                .ToList();
+        }
+    }
+    
+    public static int NextEventId()
+    {
+        EnsureInitialized();
+        lock (Sync) return _nextEventId++;
+    }
+
+    public static int NextTicketTypeId()
+    {
+        EnsureInitialized();
+        lock (Sync) return _nextTicketTypeId++;
+    }
+
+    public static void AddEvent(Event ev)
+    {
+        EnsureInitialized();
+        lock (Sync) Events.Add(ev);
+    }
+
+    public static void AddTicketType(TicketType tt)
+    {
+        EnsureInitialized();
+        lock (Sync) TicketTypes.Add(tt);
+    }
 }

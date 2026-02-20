@@ -1,3 +1,4 @@
+using EventMaster.Models;
 using EventMaster.Services;
 using EventMaster.ViewModels;
 using Microsoft.AspNetCore.Mvc;
