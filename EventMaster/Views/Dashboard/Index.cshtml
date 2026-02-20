@@ -1,10 +1,43 @@
+@model IEnumerable<EventMaster.Models.Event>
+
 @{
-    ViewData["Title"] = "Staff Dashboard";
+    ViewData["Title"] = "Organizer Dashboard";
 }
 
-<h2>Staff Dashboard</h2>
+<h2>Organizer Dashboard</h2>
 
-<ul>
-    <li><a asp-action="CreateEvent">Create New Event</a></li>
-    <li><a asp-controller="Events" asp-action="Manage">Manage Existing Events</a></li>
-</ul>
+<a class="btn btn-primary mb-3" asp-action="CreateEvent">Create New Event</a>
+
+@if (!Model.Any())
+{
+    <p>You haven't created any events yet.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Event</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th></th>
+        </tr>
+        </thead>
+
+        <tbody>
+        @foreach (var evt in Model)
+        {
+            <tr>
+                <td>@evt.EventName</td>
+                <td>@evt.EventDate.ToShortDateString()</td>
+                <td>@evt.EventTime.ToShortTimeString()</td>
+                <td>
+                    <a asp-action="EditEvent" asp-route-id="@evt.EventId" class="btn btn-warning btn-sm">Edit</a>
+                    <a asp-action="DeleteEvent" asp-route-id="@evt.EventId" class="btn btn-danger btn-sm">Delete</a>
+                    <a asp-action="Report" asp-route-id="@evt.EventId" class="btn btn-info btn-sm">Report</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

@@ -46,6 +46,10 @@ public class DashboardController : Controller
     {
         if (HttpContext.Session.GetString("UserRole") != Roles.Organizer)
             return RedirectToAction("Login", "Account");
+        
+        int organizerId = int.Parse(HttpContext.Session.GetString("UserId"));
+
+        var myEvents = InMemoryStore.GetEventsForOrganizer(organizerId);
 
         return View();
     }
