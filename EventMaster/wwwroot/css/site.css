@@ -19,4 +19,150 @@ html {
 
 body {
   margin-bottom: 60px;
+  background-color: black; 
+}
+
+.custom-nav {
+  background: #4B2E83 !important;
+}
+
+.custom-nav .nav-link,
+.custom-nav  {
+  color: #ffffff !important;
+  font-size: 18px !important;
+  font-family: "Oswald", sans-serif;
+  
+}
+
+.custom-nav .nav-link:hover {
+  color: black !important;
+  box-shadow: white 1px 1px 1px;
+  
+}
+
+
+
+.navbar-brand{
+  color: black !important;
+  font-size:40px;
+  font-weight: bold;
+  font-family: 'Montserrat', sans-serif;
+}
+.navbar-brand img { 
+  height: 60px !important;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.9));
+}
+
+.video-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.video-background video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.video-background video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.45); /* adjust darkness */
+  z-index: -1;
+}
+
+.hero-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+
+  color: #ffffff;
+  z-index: 2;
+
+  /* Make it pop */
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+  animation: fadeIn 1.2s ease-out forwards;
+}
+
+.hero-content h1 {
+  font-size: 4rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin-bottom: 0.5rem;
+  font-family: 'Oswald', sans-serif;
+}
+
+.hero-content p {
+  font-size: 1.5rem;
+  font-weight: 300;
+  letter-spacing: 1px;
+  margin-top: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+h2 {
+  color: white;
+}
+
+label{
+  color: white;
+}
+
+
+
+.btn-primary {
+  background-color: #4B2E83 !important; /* deep purple */
+  border-color: #4B2E83 !important;
+}
+
+.btn-primary:hover {
+  background-color: #3A1F5D !important; /* darker hover */
+  border-color: #3A1F5D !important;
+}
+p{
+  color: white;
+}
+
+table thead th {
+  color: white !important;
+}
+.table.table-striped.align-middle th,
+.table.table-striped.align-middle td {
+  color: white !important;
 }

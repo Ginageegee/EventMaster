@@ -1,8 +1,22 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+
+<section class="hero-section">
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="~/images/home_background.mp4" type="video/mp4" />
+        </video>
+    </div>
+
+    <div class="video-overlay"></div>
+
+    <div class="hero-content">
+        <h1>Welcome to EVENTMASTER</h1>
+        <p>Skip the fees, Score the seats, EventMaster</p>
+    </div>
+</section>
+
+
+

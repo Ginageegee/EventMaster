@@ -1,20 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Vincent\\vsstudio\\EventMaster\\EventMaster\\EventMaster\\EventMaster.csproj": {}
+    "C:\\MyProjects\\EventMaster\\EventMaster\\EventMaster.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Vincent\\vsstudio\\EventMaster\\EventMaster\\EventMaster\\EventMaster.csproj": {
+    "C:\\MyProjects\\EventMaster\\EventMaster\\EventMaster.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Vincent\\vsstudio\\EventMaster\\EventMaster\\EventMaster\\EventMaster.csproj",
+        "projectUniqueName": "C:\\MyProjects\\EventMaster\\EventMaster\\EventMaster.csproj",
         "projectName": "EventMaster",
-        "projectPath": "C:\\Users\\Vincent\\vsstudio\\EventMaster\\EventMaster\\EventMaster\\EventMaster.csproj",
-        "packagesPath": "C:\\Users\\Vincent\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Vincent\\vsstudio\\EventMaster\\EventMaster\\EventMaster\\obj\\",
+        "projectPath": "C:\\MyProjects\\EventMaster\\EventMaster\\EventMaster.csproj",
+        "packagesPath": "C:\\Users\\Regina\\.nuget\\packages\\",
+        "outputPath": "C:\\MyProjects\\EventMaster\\EventMaster\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\Vincent\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Regina\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -34,11 +38,6 @@
           "warnAsError": [
             "NU1605"
           ]
-        },
-        "restoreAuditProperties": {
-          "enableAudit": "true",
-          "auditLevel": "low",
-          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -63,7 +62,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "c:\\program files\\dotnet\\sdk\\8.0.101/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
