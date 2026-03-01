@@ -7,7 +7,8 @@ public static class InMemoryStore
 {
     private static readonly object Sync = new();
     private static bool _initialized;
-
+    
+    private static readonly List<User> Users = new();
     private static readonly List<Event> Events = new();
     private static readonly List<TicketType> TicketTypes = new();
 
@@ -106,6 +107,7 @@ public static class InMemoryStore
                 Password = "demo",
                 Role = Roles.Organizer
             };
+            AddUser(organizer);
 
             AddSeedEvent(organizer, "Toronto's HipHop Classic", "Hometown Artists with electric energy!", DateTime.Today.AddDays(7), new TimeSpan(19, 30, 0));
             AddSeedEvent(organizer, "DJ P House Music Tour", "Late-night set + lasers!", DateTime.Today.AddDays(12), new TimeSpan(22, 0, 0));
@@ -164,6 +166,16 @@ public static class InMemoryStore
                 .ThenBy(e => e.EventTime)
                 .ToList();
         }
+    }
+    
+    public static void AddUser(User user)
+    {
+        lock (Sync) Users.Add(user);
+    }
+    public static IReadOnlyList<User> GetUsers()
+    {
+        EnsureInitialized();
+        lock (Sync) return Users.ToList();
     }
     
     public static int NextEventId()

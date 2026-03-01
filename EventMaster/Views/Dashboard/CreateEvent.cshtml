@@ -2,7 +2,9 @@
 
 <h2>Create Event</h2>
 
-<form method="post">
+<form asp-action="CreateEvent" asp-controller="Dashboard" method="post">
+    @Html.AntiForgeryToken()
+
     <input type="hidden" asp-for="OrganizerId" />
     <input type="hidden" asp-for="VenueId" />
     
