@@ -1,43 +1,56 @@
 @model IEnumerable<EventMaster.Models.Event>
 
 @{
-    ViewData["Title"] = "Organizer Dashboard";
+ViewData["Title"] = "Organizer Dashboard";
 }
 
-<h2>Organizer Dashboard</h2>
+<h2 class="text-white mb-3">Your Events</h2>
 
-<a class="btn btn-primary mb-3" asp-action="CreateEvent">Create New Event</a>
+<a class="btn btn-primary mb-4" asp-action="CreateEvent">+ Create New Event</a>
 
 @if (!Model.Any())
 {
-    <p>You haven't created any events yet.</p>
+<p class="text-white">You haven't created any events yet.</p>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-        <tr>
-            <th>Event</th>
-            <th>Date</th>
-            <th>Time</th>
-            <th></th>
-        </tr>
-        </thead>
+var grouped = Model
+.OrderBy(e => e.Venue?.Name)
+.ThenBy(e => e.EventDate)
+.GroupBy(e => e.Venue?.Name ?? "No Venue Selected");
 
-        <tbody>
-        @foreach (var evt in Model)
-        {
-            <tr>
-                <td>@evt.EventName</td>
-                <td>@evt.EventDate.ToShortDateString()</td>
-                <td>@evt.EventTime.ToShortTimeString()</td>
-                <td>
-                    <a asp-action="EditEvent" asp-route-id="@evt.EventId" class="btn btn-warning btn-sm">Edit</a>
-                    <a asp-action="DeleteEvent" asp-route-id="@evt.EventId" class="btn btn-danger btn-sm">Delete</a>
-                    <a asp-action="Report" asp-route-id="@evt.EventId" class="btn btn-info btn-sm">Report</a>
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+foreach (var group in grouped)
+{
+<h4 class="mt-4 text-white">@group.Key</h4>
+
+<table class="table table-bordered table-hover text-white">
+    <thead class="table-dark">
+    <tr>
+        <th class="text-white">Event</th>
+        <th class="text-white">Date</th>
+        <th class="text-white">Time</th>
+        <th class="text-white" style="width: 220px;">Actions</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @foreach (var evt in group)
+    {
+    <tr>
+        <td class="text-white">
+            <strong>@evt.EventName</strong><br />
+            <small class="text-light">@evt.EventDescription</small>
+        </td>
+        <td class="text-white">@evt.EventDate.ToShortDateString()</td>
+        <td class="text-white">@evt.EventTime.ToShortTimeString()</td>
+        <td>
+            <a asp-action="EditEvent" asp-route-id="@evt.EventId" class="btn btn-warning btn-sm me-1">Edit</a>
+            <a asp-action="DeleteEvent" asp-route-id="@evt.EventId" class="btn btn-danger btn-sm me-1">Delete</a>
+            <a asp-action="Report" asp-route-id="@evt.EventId" class="btn btn-info btn-sm">Report</a>
+        </td>
+    </tr>
+    }
+    </tbody>
+</table>
+}
 }
