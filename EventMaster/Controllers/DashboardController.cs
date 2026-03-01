@@ -16,10 +16,11 @@ public class DashboardController : Controller
          if (!int.TryParse(userIdString, out int organizerId))
              return RedirectToAction("Login", "Account");
      
+         ViewBag.Venues = InMemoryStore.GetVenues();
+     
          var model = new Event
          {
-             OrganizerId = organizerId,
-             VenueId = null
+             OrganizerId = organizerId
          };
      
          return View(model);
@@ -29,7 +30,7 @@ public class DashboardController : Controller
     [HttpPost]
     public IActionResult CreateEvent(Event model)
     {
-        //debugging - temp
+        // Debugging output
         foreach (var entry in ModelState)
         {
             foreach (var error in entry.Value.Errors)
@@ -37,19 +38,37 @@ public class DashboardController : Controller
                 Console.WriteLine($"{entry.Key}: {error.ErrorMessage}");
             }
         }
-
+    
         if (!ModelState.IsValid)
+        {
+            ViewBag.Venues = InMemoryStore.GetVenues(); 
             return View(model);
-
-        model.OrganizerId = int.Parse(HttpContext.Session.GetString("UserId"));
+        }
+    
+        // Organizer from session
+        var userIdString = HttpContext.Session.GetString("UserId");
+        model.OrganizerId = int.Parse(userIdString);
+        model.Organizer = InMemoryStore.GetUsers()
+            .FirstOrDefault(u => u.UserId == model.OrganizerId);
+    
+        // Venue from dropdown
+        if (model.VenueId.HasValue)
+        {
+            model.Venue = InMemoryStore.GetVenues()
+                .FirstOrDefault(v => v.VenueId == model.VenueId.Value);
+        }
+    
+        // Merge date + time
         model.EventTime = model.EventDate.Date
             .AddHours(model.EventTime.Hour)
             .AddMinutes(model.EventTime.Minute);
-        
+    
         InMemoryStore.AddEvent(model);
-
+    
         return RedirectToAction("Index");
     }
+    
+
 
 
     public IActionResult Index()

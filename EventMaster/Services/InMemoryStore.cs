@@ -10,6 +10,7 @@ public static class InMemoryStore
     
     private static readonly List<User> Users = new();
     private static readonly List<Event> Events = new();
+    private static readonly List<Venue> Venues = new();
     private static readonly List<TicketType> TicketTypes = new();
 
     private static int _nextEventId = 1;
@@ -22,6 +23,12 @@ public static class InMemoryStore
         {
             return Events.OrderBy(e => e.EventDate).ThenBy(e => e.EventTime).ToList();
         }
+    }
+    
+    public static IReadOnlyList<Venue> GetVenues()
+    {
+        EnsureInitialized();
+        lock (Sync) return Venues.ToList();
     }
 
     public static Event? GetEvent(int eventId)
@@ -113,6 +120,10 @@ public static class InMemoryStore
             AddSeedEvent(organizer, "DJ P House Music Tour", "Late-night set + lasers!", DateTime.Today.AddDays(12), new TimeSpan(22, 0, 0));
             AddSeedEvent(organizer, "Poetry Jazz Night", "Jazz, poetry, and great vibes!", DateTime.Today.AddDays(4), new TimeSpan(20, 0, 0));
 
+            Venues.Add(new Venue { VenueId = 1, Name = "Downtown Hall" });
+            Venues.Add(new Venue { VenueId = 2, Name = "City Arts Centre" });
+            Venues.Add(new Venue { VenueId = 3, Name = "Riverside Pavilion" });
+            
             _initialized = true;
         }
     }
@@ -192,14 +203,13 @@ public static class InMemoryStore
 
     public static void AddEvent(Event ev)
     {
-        AddSeedEvent(
-            ev.Organizer,
-            ev.EventName,
-            ev.EventDescription,
-            ev.EventDate,
-            ev.EventTime.TimeOfDay
-        );
-
+        EnsureInitialized();
+    
+        lock (Sync)
+        {
+            ev.EventId = _nextEventId++;
+            Events.Add(ev);
+        }
     }
 
     public static void AddTicketType(TicketType tt)

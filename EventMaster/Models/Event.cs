@@ -13,9 +13,11 @@ public class Event
     public DateTime EventTime { get; set; }
     
     public int OrganizerId { get; set; }
+    [ValidateNever]
     public User Organizer { get; set; }
     
     public int? VenueId { get; set; }
+    [ValidateNever]
     public Venue Venue { get; set; }
     
 }

@@ -7,6 +7,14 @@
 
     <input type="hidden" asp-for="OrganizerId" />
     <input type="hidden" asp-for="VenueId" />
+
+    <div class="form-group">
+        <label asp-for="VenueId">Venue</label>
+        <select asp-for="VenueId" class="form-control"
+                asp-items="@(new SelectList(ViewBag.Venues, "VenueId", "Name"))">
+            <option value="">Select a venue</option>
+        </select>
+    </div>
     
     <div class="form-group">
         <label asp-for="EventName"></label>
