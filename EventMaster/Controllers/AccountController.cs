@@ -1,126 +1,214 @@
+using EventMaster.Data;
 using EventMaster.Models;
+using EventMaster.Models.ViewModels;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
-namespace EventMaster.Controllers
+public class AccountController : Controller
 {
-    public class AccountController : Controller
+    private readonly ApplicationDbContext _context;
+
+    public AccountController(ApplicationDbContext context)
     {
-        // TEMP storage until DB (resets whenever the app restarts)
-        private static readonly List<User> Users = new();
+        _context = context;
+    }
 
-        // Adds demo accounts once so you can always log in after a restart.
-        private static void EnsureSeedUsers()
+    public IActionResult Login(string returnUrl = "/")
+    {
+        var props = new AuthenticationProperties
         {
-            if (Users.Count > 0) return;
+            RedirectUri = Url.Action("PostLogin", "Account", new { returnUrl })
+        };
 
-            Users.Add(new User
-            {
-                UserId = 1,
-                FirstName = "Test",
-                LastName = "Attendee",
-                Email = "attendee@eventmaster.com",
-                Password = "test",
-                Role = Roles.Attendee,
-                EventsCreated = new List<Event>()
-            });
+        return Challenge(props, "Auth0");
+    }
 
-            Users.Add(new User
-            {
-                UserId = 2,
-                FirstName = "Test",
-                LastName = "Organizer",
-                Email = "organizer@eventmaster.com",
-                Password = "test",
-                Role = Roles.Organizer,
-                EventsCreated = new List<Event>()
-            });
+    [Authorize]
+    public async Task<IActionResult> PostLogin(string returnUrl = "/")
+    {
+        var user = await EnsureLocalUserAsync();
+
+        if (user == null)
+        {
+            return Content("Authenticated successfully, but the local user could not be created.");
         }
 
-        public IActionResult Index()
+        if (string.IsNullOrWhiteSpace(user.FirstName) ||
+            string.IsNullOrWhiteSpace(user.LastName))
         {
-            var role = HttpContext.Session.GetString("UserRole");
-
-            if (role == Roles.Organizer)
-                return RedirectToAction("Index", "Dashboard");
-
-            if (role == Roles.Attendee)
-                return RedirectToAction("Index", "Home");
-
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("CompleteProfile");
         }
 
-        public IActionResult Register()
+        if (string.IsNullOrWhiteSpace(returnUrl) || !Url.IsLocalUrl(returnUrl))
         {
-            EnsureSeedUsers();
-            return View();
+            return RedirectToAction("Index", "Home");
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Register(User model)
+        return Redirect(returnUrl);
+    }
+
+    public IActionResult Logout()
+    {
+        var props = new AuthenticationProperties
         {
-            EnsureSeedUsers();
+            RedirectUri = "/"
+        };
 
-            if (!ModelState.IsValid)
-                return View(model);
+        return SignOut(props, "Auth0", "Cookies");
+    }
 
-            model.Email = (model.Email ?? string.Empty).Trim();
+    [Authorize]
+    public async Task<IActionResult> Profile()
+    {
+        var user = await EnsureLocalUserAsync();
 
-            if (Users.Any(u => u.Email.Equals(model.Email, StringComparison.OrdinalIgnoreCase)))
-            {
-                ModelState.AddModelError(nameof(model.Email), "That email is already registered.");
-                return View(model);
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Role))
-                model.Role = Roles.Attendee;
-
-            // Prevent null collection warnings / future issues
-            model.EventsCreated ??= new List<Event>();
-
-            Users.Add(model);
+        if (user == null)
+        {
             return RedirectToAction("Login");
         }
 
-        public IActionResult Login()
+        return View(user);
+    }
+    
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Profile(User model)
+    {
+        var user = await EnsureLocalUserAsync();
+
+        if (user == null)
         {
-            EnsureSeedUsers();
-            return View();
+            return RedirectToAction("Login");
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Login(string email, string password)
+        user.Email = model.Email?.Trim();
+        user.FirstName = model.FirstName?.Trim() ?? "";
+        user.LastName = model.LastName?.Trim() ?? "";
+
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Profile");
+    }
+    
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> CompleteProfile()
+    {
+        var user = await EnsureLocalUserAsync();
+
+        if (user == null)
+            return RedirectToAction("Login");
+
+        if (!string.IsNullOrWhiteSpace(user.FirstName) &&
+            !string.IsNullOrWhiteSpace(user.LastName))
         {
-            EnsureSeedUsers();
-
-            email = (email ?? string.Empty).Trim();
-
-            var user = Users.FirstOrDefault(u =>
-                u.Email.Equals(email, StringComparison.OrdinalIgnoreCase) &&
-                u.Password == password);
-
-            if (user == null)
-            {
-                ViewBag.Error = "Invalid login.";
-                return View();
-            }
-
-            // Store user in session
-            HttpContext.Session.SetString("UserEmail", user.Email);
-            HttpContext.Session.SetString("UserRole", user.Role);
-            HttpContext.Session.SetString("UserId", user.UserId.ToString());
-            
-            return user.Role == Roles.Organizer
-                ? RedirectToAction("Index", "Dashboard")
-                : RedirectToAction("Index", "Home");
-        }
-
-        public IActionResult Logout()
-        {
-            HttpContext.Session.Remove("UserEmail");
-            HttpContext.Session.Remove("UserRole");
             return RedirectToAction("Index", "Home");
         }
+
+        var vm = new CompleteProfileViewModel
+        {
+            FirstName = user.FirstName ?? "",
+            LastName = user.LastName ?? ""
+        };
+
+        return View(vm);
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CompleteProfile(CompleteProfileViewModel vm)
+    {
+        if (!ModelState.IsValid)
+            return View(vm);
+
+        var user = await EnsureLocalUserAsync();
+
+        if (user == null)
+            return RedirectToAction("Login");
+
+        user.FirstName = vm.FirstName.Trim();
+        user.LastName = vm.LastName.Trim();
+
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Index", "Home");
+    }
+
+    private async Task<User?> EnsureLocalUserAsync()
+    {
+        var auth0Id =
+            User.FindFirst("sub")?.Value ??
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+            User.FindFirst("nameidentifier")?.Value;
+
+        if (string.IsNullOrWhiteSpace(auth0Id))
+        {
+            return null;
+        }
+
+        var email =
+            User.FindFirst(ClaimTypes.Email)?.Value ??
+            User.FindFirst("email")?.Value;
+
+        var firstName =
+            User.FindFirst(ClaimTypes.GivenName)?.Value ??
+            User.FindFirst("given_name")?.Value ??
+            "";
+
+        var lastName =
+            User.FindFirst(ClaimTypes.Surname)?.Value ??
+            User.FindFirst("family_name")?.Value ??
+            "";
+
+        var existingUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Auth0UserId == auth0Id);
+
+        if (existingUser != null)
+        {
+            bool updated = false;
+
+            if (!string.IsNullOrWhiteSpace(email) && existingUser.Email != email)
+            {
+                existingUser.Email = email;
+                updated = true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(firstName) && existingUser.FirstName != firstName)
+            {
+                existingUser.FirstName = firstName;
+                updated = true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(lastName) && existingUser.LastName != lastName)
+            {
+                existingUser.LastName = lastName;
+                updated = true;
+            }
+
+            if (updated)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return existingUser;
+        }
+
+        var newUser = new User
+        {
+            Auth0UserId = auth0Id,
+            Email = email,
+            FirstName = firstName,
+            LastName = lastName
+        };
+
+        _context.Users.Add(newUser);
+        await _context.SaveChangesAsync();
+
+        return newUser;
     }
 }

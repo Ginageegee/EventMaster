@@ -111,8 +111,6 @@ public static class InMemoryStore
                 FirstName = "Demo",
                 LastName = "Organizer",
                 Email = "organizer@eventmaster.local",
-                Password = "demo",
-                Role = Roles.Organizer
             };
             AddUser(organizer);
 

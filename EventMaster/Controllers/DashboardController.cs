@@ -1,90 +1,88 @@
+using EventMaster.Data;
 using EventMaster.Models;
-using EventMaster.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EventMaster.Controllers;
 
+[Authorize] // Require Auth0 login for all dashboard actions
 public class DashboardController : Controller
 {
+    private readonly ApplicationDbContext _context;
+
+    public DashboardController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
     // GET: /Dashboard/CreateEvent
-     public IActionResult CreateEvent()
-     {
-         if (HttpContext.Session.GetString("UserRole") != Roles.Organizer)
-             return RedirectToAction("Login", "Account");
-     
-         var userIdString = HttpContext.Session.GetString("UserId");
-         if (!int.TryParse(userIdString, out int organizerId))
-             return RedirectToAction("Login", "Account");
-     
-         ViewBag.Venues = InMemoryStore.GetVenues();
-     
-         var model = new Event
-         {
-             OrganizerId = organizerId
-         };
-     
-         return View(model);
-     }
+    public async Task<IActionResult> CreateEvent()
+    {
+        var user = await GetCurrentUserAsync();
+        if (user == null)
+            return RedirectToAction("Login", "Account");
+
+        ViewBag.Venues = await _context.Venues.ToListAsync();
+
+        var model = new Event
+        {
+            OrganizerId = user.UserId
+        };
+
+        return View(model);
+    }
 
     // POST: /Dashboard/CreateEvent
     [HttpPost]
-    public IActionResult CreateEvent(Event model)
+    public async Task<IActionResult> CreateEvent(Event model)
     {
-        // Debugging output
-        foreach (var entry in ModelState)
-        {
-            foreach (var error in entry.Value.Errors)
-            {
-                Console.WriteLine($"{entry.Key}: {error.ErrorMessage}");
-            }
-        }
-    
+        var user = await GetCurrentUserAsync();
+        if (user == null)
+            return RedirectToAction("Login", "Account");
+
         if (!ModelState.IsValid)
         {
-            ViewBag.Venues = InMemoryStore.GetVenues(); 
+            ViewBag.Venues = await _context.Venues.ToListAsync();
             return View(model);
         }
-    
-        // Organizer from session
-        var userIdString = HttpContext.Session.GetString("UserId");
-        model.OrganizerId = int.Parse(userIdString);
-        model.Organizer = InMemoryStore.GetUsers()
-            .FirstOrDefault(u => u.UserId == model.OrganizerId);
-    
-        // Venue from dropdown
-        if (model.VenueId.HasValue)
-        {
-            model.Venue = InMemoryStore.GetVenues()
-                .FirstOrDefault(v => v.VenueId == model.VenueId.Value);
-        }
-    
+
+        // Assign organizer
+        model.OrganizerId = user.UserId;
+
         // Merge date + time
         model.EventTime = model.EventDate.Date
             .AddHours(model.EventTime.Hour)
             .AddMinutes(model.EventTime.Minute);
-    
-        InMemoryStore.AddEvent(model);
-    
+
+        _context.Events.Add(model);
+        await _context.SaveChangesAsync();
+
         return RedirectToAction("Index");
     }
-    
 
-
-
-    public IActionResult Index()
+    // GET: /Dashboard
+    public async Task<IActionResult> Index()
     {
-        if (HttpContext.Session.GetString("UserRole") != Roles.Organizer)
+        var user = await GetCurrentUserAsync();
+        if (user == null)
             return RedirectToAction("Login", "Account");
-    
-        var userIdString = HttpContext.Session.GetString("UserId");
-        if (string.IsNullOrEmpty(userIdString))
-            return RedirectToAction("Login", "Account");
-    
-        if (!int.TryParse(userIdString, out int organizerId))
-            return RedirectToAction("Login", "Account");
-    
-        var myEvents = InMemoryStore.GetEventsForOrganizer(organizerId);
-    
+
+        var myEvents = await _context.Events
+            .Where(e => e.OrganizerId == user.UserId)
+            .ToListAsync();
+
         return View(myEvents);
+    }
+
+    // ⭐ Helper: Get the logged‑in Auth0 user from DB
+    private async Task<User?> GetCurrentUserAsync()
+    {
+        var auth0Id = User.FindFirst("sub")?.Value;
+        if (auth0Id == null)
+            return null;
+
+        return await _context.Users
+            .FirstOrDefaultAsync(u => u.Auth0UserId == auth0Id);
     }
 }

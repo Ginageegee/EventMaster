@@ -1,43 +1,41 @@
-﻿@using EventMaster.Models
-@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+﻿@using System.Security.Claims
 
 @{
-    var ctx = HttpContextAccessor.HttpContext;
-    var role = ctx?.Session?.GetString("UserRole");
-    var email = ctx?.Session?.GetString("UserEmail");
-    var isLoggedIn = !string.IsNullOrWhiteSpace(email);
+    var isLoggedIn = User?.Identity?.IsAuthenticated ?? false;
+    var email = User?.FindFirst(ClaimTypes.Email)?.Value ?? User?.FindFirst("email")?.Value;
+    var firstName = User?.FindFirst(ClaimTypes.GivenName)?.Value ?? User?.FindFirst("given_name")?.Value;
+    var displayName = !string.IsNullOrWhiteSpace(firstName)
+        ? firstName
+        : (!string.IsNullOrWhiteSpace(email) ? email : "Account");
 }
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - EventMaster</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
-    <link rel="stylesheet" href="~/EventMaster.styles.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/EventMaster.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 </head>
 <body>
 <header>
     <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3 custom-nav">
         <div class="container-fluid">
 
-            <!-- Logo -->
             <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                <img src="~/images/EVENTMASTER_LOGO.png" asp-append-version="true" style="height:40px;">
+                <img src="~/images/EVENTMASTER_LOGO.png" asp-append-version="true" style="height:40px;" alt="EventMaster Logo" />
             </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
-                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                    aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
-            <div class="navbar-collapse collapse d-sm-inline-flex">
+            <div id="mainNavbar" class="navbar-collapse collapse d-sm-inline-flex">
 
-                <!-- LEFT SIDE NAV ITEMS -->
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Home</a>
@@ -52,50 +50,34 @@
                     </li>
                 </ul>
 
-                <!-- RIGHT SIDE NAV ITEMS -->
-                <ul class="navbar-nav ms-auto">
-
+                <ul class="navbar-nav ms-auto align-items-sm-center">
                     @if (!isLoggedIn)
                     {
-                    <li class="nav-item  mx-2">
-                        <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">
-                            <i class="fa-solid fa-address-card"></i> Register
-                        </a>
-                    </li>
-
-                    <li class="nav-item  mx-2">
-                        <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">
-                            <i class="fa-solid fa-arrow-right-to-bracket"></i> Login
-                        </a>
-                    </li>
+                        <li class="nav-item mx-2">
+                            <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">
+                                <i class="fa-solid fa-arrow-right-to-bracket"></i> Login / Sign Up
+                            </a>
+                        </li>
                     }
                     else
                     {
-                    @if (role == Roles.Attendee)
-                    {
-                    <li class="nav-item  mx-2">
-                        <a class="nav-link text-dark" asp-controller="Tickets" asp-action="MyTickets">My Tickets</a>
-                    </li>
-                    }
+                        <li class="nav-item mx-2">
+                            <a class="nav-link text-dark" asp-controller="Account" asp-action="Profile">
+                                <i class="fa-solid fa-user"></i> @displayName
+                            </a>
+                        </li>
 
-                    @if (role == Roles.Organizer)
-                    {
-                    <li class="nav-item  mx-2">
-                        <a class="nav-link text-dark" asp-controller="Dashboard" asp-action="Index">Organizer Dashboard</a>
-                    </li>
+                        <li class="nav-item mx-2">
+                            <a class="nav-link text-dark" asp-controller="Account" asp-action="Logout">
+                                <i class="fa-solid fa-right-from-bracket"></i> Logout
+                            </a>
+                        </li>
                     }
-
-                    <li class="nav-item  mx-2">
-                        <a class="nav-link text-dark" asp-controller="Account" asp-action="Logout">Logout</a>
-                    </li>
-                    }
-
                 </ul>
 
             </div>
         </div>
     </nav>
-
 </header>
 
 <div class="container">
