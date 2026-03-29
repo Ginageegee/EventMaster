@@ -1,3 +1,4 @@
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model EventMaster.Models.ViewModels.DashboardViewModel
 
 @{
@@ -7,7 +8,7 @@
 <h2 class="text-white mb-3">Your Events</h2>
 
 <a class="btn btn-primary mb-4" asp-action="CreateEvent">+ Create New Event</a>
-
+<a class="btn btn-secondary mb-3" asp-controller="Account" asp-action="Profile">+ Manage Account</a>
 @if (!Model.MyEvents.Any())
 {
     <p class="text-white">You haven't created any events yet.</p>

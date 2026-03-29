@@ -16,8 +16,13 @@ public class AccountController : Controller
         _context = context;
     }
 
-    public IActionResult Login(string returnUrl = "/")
+    public IActionResult Login(string returnUrl = "/Dashboard/Index")
     {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return Redirect(returnUrl);
+        }
+
         var props = new AuthenticationProperties
         {
             RedirectUri = Url.Action("PostLogin", "Account", new { returnUrl })
@@ -27,7 +32,7 @@ public class AccountController : Controller
     }
 
     [Authorize]
-    public async Task<IActionResult> PostLogin(string returnUrl = "/")
+    public async Task<IActionResult> PostLogin(string returnUrl = "/Dashboard/Index")
     {
         var user = await EnsureLocalUserAsync();
 
@@ -44,7 +49,7 @@ public class AccountController : Controller
 
         if (string.IsNullOrWhiteSpace(returnUrl) || !Url.IsLocalUrl(returnUrl))
         {
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Dashboard");
         }
 
         return Redirect(returnUrl);
@@ -72,7 +77,7 @@ public class AccountController : Controller
 
         return View(user);
     }
-    
+
     [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -93,7 +98,7 @@ public class AccountController : Controller
 
         return RedirectToAction("Profile");
     }
-    
+
     [Authorize]
     [HttpGet]
     public async Task<IActionResult> CompleteProfile()
@@ -106,7 +111,7 @@ public class AccountController : Controller
         if (!string.IsNullOrWhiteSpace(user.FirstName) &&
             !string.IsNullOrWhiteSpace(user.LastName))
         {
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Dashboard");
         }
 
         var vm = new CompleteProfileViewModel
@@ -136,7 +141,7 @@ public class AccountController : Controller
 
         await _context.SaveChangesAsync();
 
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction("Index", "Dashboard");
     }
 
     private async Task<User?> EnsureLocalUserAsync()
@@ -157,13 +162,11 @@ public class AccountController : Controller
 
         var firstName =
             User.FindFirst(ClaimTypes.GivenName)?.Value ??
-            User.FindFirst("given_name")?.Value ??
-            "";
+            User.FindFirst("given_name")?.Value ?? "";
 
         var lastName =
             User.FindFirst(ClaimTypes.Surname)?.Value ??
-            User.FindFirst("family_name")?.Value ??
-            "";
+            User.FindFirst("family_name")?.Value ?? "";
 
         var existingUser = await _context.Users
             .FirstOrDefaultAsync(u => u.Auth0UserId == auth0Id);
@@ -201,7 +204,7 @@ public class AccountController : Controller
         var newUser = new User
         {
             Auth0UserId = auth0Id,
-            Email = email,  
+            Email = email,
             FirstName = firstName,
             LastName = lastName
         };

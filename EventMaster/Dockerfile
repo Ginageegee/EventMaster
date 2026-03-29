@@ -1,19 +1,23 @@
-# Build stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 8081
+EXPOSE 8082
+
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-
+COPY ["EventMaster.csproj", "./"]
+RUN dotnet restore "EventMaster.csproj"
 COPY . .
-RUN dotnet restore
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet build "EventMaster.csproj" -c Release -o /app/build
 
-ENV ASPNETCORE_ENVIRONMENT=Development
+FROM build AS publish
+RUN dotnet publish "EventMaster.csproj" -c Release -o /app/publish
 
-# Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM base AS final
 WORKDIR /app
-COPY --from=build /app/publish .
-
-EXPOSE 8081
-ENV ASPNETCORE_URLS=http://+:8081
-
+COPY --from=publish /app/publish .
+COPY https /https
+ENV ASPNETCORE_URLS="https://+:8082;http://+:8081"
+ENV ASPNETCORE_Kestrel__Certificates__Default__Password="devcert"
+ENV ASPNETCORE_Kestrel__Certificates__Default__Path="/https/aspnetapp.pfx"
 ENTRYPOINT ["dotnet", "EventMaster.dll"]

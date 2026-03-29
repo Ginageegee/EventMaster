@@ -1,12 +1,13 @@
 using EventMaster.Data;
 using EventMaster.Models;
+using EventMaster.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventMaster.Controllers;
 
-[Authorize] // Require Auth0 login for all dashboard actions
+[Authorize]
 public class DashboardController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -16,12 +17,11 @@ public class DashboardController : Controller
         _context = context;
     }
 
-    // GET: /Dashboard/CreateEvent
     public async Task<IActionResult> CreateEvent()
     {
         var user = await GetCurrentUserAsync();
         if (user == null)
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("PostLogin", "Account");
 
         ViewBag.Venues = await _context.Venues.ToListAsync();
 
@@ -33,13 +33,12 @@ public class DashboardController : Controller
         return View(model);
     }
 
-    // POST: /Dashboard/CreateEvent
     [HttpPost]
     public async Task<IActionResult> CreateEvent(Event model)
     {
         var user = await GetCurrentUserAsync();
         if (user == null)
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("PostLogin", "Account");
 
         if (!ModelState.IsValid)
         {
@@ -47,10 +46,8 @@ public class DashboardController : Controller
             return View(model);
         }
 
-        // Assign organizer
         model.OrganizerId = user.UserId;
 
-        // Merge date + time
         model.EventTime = model.EventDate.Date
             .AddHours(model.EventTime.Hour)
             .AddMinutes(model.EventTime.Minute);
@@ -61,24 +58,34 @@ public class DashboardController : Controller
         return RedirectToAction("Index");
     }
 
-    // GET: /Dashboard
     public async Task<IActionResult> Index()
     {
         var user = await GetCurrentUserAsync();
         if (user == null)
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("PostLogin", "Account");
 
         var myEvents = await _context.Events
             .Where(e => e.OrganizerId == user.UserId)
             .ToListAsync();
 
-        return View(myEvents);
+        var myTickets = await _context.Tickets
+            .Include(t => t.Event)
+            .Where(t => t.OwnerUserId == user.UserId)
+            .ToListAsync();
+
+        var viewModel = new DashboardViewModel
+        {
+            MyEvents = myEvents,
+            MyTickets = myTickets
+        };
+
+        return View(viewModel);
     }
 
-    // ⭐ Helper: Get the logged‑in Auth0 user from DB
     private async Task<User?> GetCurrentUserAsync()
     {
         var auth0Id = User.FindFirst("sub")?.Value;
+        Console.WriteLine("Auth0 ID: " + auth0Id);
         if (auth0Id == null)
             return null;
 

@@ -25,4 +25,5 @@ public class Ticket
     public User OwnerUser { get; set; }
 
     public decimal Price { get; set; }
+    public bool IsListedForSale { get; set; }
 }

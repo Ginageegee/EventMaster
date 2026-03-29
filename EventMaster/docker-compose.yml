@@ -3,23 +3,27 @@ version: "3.9"
 services:
   eventmaster:
     build: .
+    env_file:
+      - .env
     container_name: eventmaster_app
     ports:
       - "8081:8081"
+      - "8082:8082"
     environment:
-      - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=eventmaster;user=root;password=${MYSQL_ROOT_PASSWORD}
-      - ASPNETCORE_ENVIRONMENT=Development
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "https://+:8082;http://+:8081"
+      ASPNETCORE_Kestrel__Certificates__Default__Password: "devcert"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: "/https/aspnetapp.pfx"
+      ConnectionStrings__DefaultConnection: "server=mysql;port=3306;database=eventmaster;user=root;password=${MYSQL_ROOT_PASSWORD}"
+    volumes:
+      - ./https:/https:ro
     depends_on:
       - mysql
-  
   
   mysql:
     image: mysql:8.0
     container_name: eventmaster_mysql
     restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: "RootPass123!"
-      MYSQL_DATABASE: eventmaster
     ports:
       - "3307:3306"
     volumes:

@@ -1,52 +1,46 @@
-using Auth0.AspNetCore.Authentication;
-using EventMaster.Data;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// MVC + Session
 builder.Services.AddControllersWithViews();
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession();
-builder.Services.AddHttpContextAccessor();
 
-// Database (local or Docker depending on connection string override)
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        new MySqlServerVersion(new Version(8, 0, 0))
-    ));
-
-// Auth0 Authentication
-builder.Services
-    .AddAuth0WebAppAuthentication(options =>
+builder.Services.AddAuthentication(options =>
     {
-        options.Domain = builder.Configuration["Auth0:Domain"];
+        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+    })
+    .AddCookie()
+    .AddOpenIdConnect("Auth0", options =>
+    {
+        options.Authority = $"https://{builder.Configuration["Auth0:Domain"]}";
         options.ClientId = builder.Configuration["Auth0:ClientId"];
         options.ClientSecret = builder.Configuration["Auth0:ClientSecret"];
-        options.CallbackPath = "/callback"; // or /Account/Login if you're using MVC
+        options.ResponseType = OpenIdConnectResponseType.Code;
+        options.CallbackPath = "/signin-auth0";
+        options.Scope.Clear();
+        options.Scope.Add("openid");
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+        options.SaveTokens = true;
     });
 
-
-var app = builder.Build();
-Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
-if (!app.Environment.IsDevelopment())
+builder.Services.AddDbContext<EventMaster.Data.ApplicationDbContext>(options =>
 {
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
+    var conn = builder.Configuration.GetConnectionString("DefaultConnection");
+    options.UseMySql(conn, ServerVersion.AutoDetect(conn));
+});
+var app = builder.Build();
 
-// app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
-app.UseSession();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
-// MVC Routing
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
