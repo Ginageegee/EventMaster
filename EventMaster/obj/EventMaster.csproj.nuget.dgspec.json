@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\EventMaster\\EventMaster.csproj": {}
+    "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\Eventmaster\\EventMaster.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\EventMaster\\EventMaster.csproj": {
+    "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\Eventmaster\\EventMaster.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\EventMaster\\EventMaster.csproj",
+        "projectUniqueName": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\Eventmaster\\EventMaster.csproj",
         "projectName": "EventMaster",
-        "projectPath": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\EventMaster\\EventMaster.csproj",
+        "projectPath": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\Eventmaster\\EventMaster.csproj",
         "packagesPath": "C:\\Users\\Scove\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\EventMaster\\obj\\",
+        "outputPath": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\Eventmaster\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Scove\\AppData\\Roaming\\NuGet\\NuGet.Config"

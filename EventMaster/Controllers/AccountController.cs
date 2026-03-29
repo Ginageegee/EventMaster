@@ -201,7 +201,7 @@ public class AccountController : Controller
         var newUser = new User
         {
             Auth0UserId = auth0Id,
-            Email = email,
+            Email = email,  
             FirstName = firstName,
             LastName = lastName
         };

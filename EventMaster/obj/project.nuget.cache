@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "l+lgK6Ype3Y=",
+  "dgSpecHash": "t4PzJNCeCWs=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\EventMaster\\EventMaster.csproj",
+  "projectFilePath": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\Eventmaster\\EventMaster.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Scove\\.nuget\\packages\\auth0.aspnetcore.authentication\\1.6.1\\auth0.aspnetcore.authentication.1.6.1.nupkg.sha512",
     "C:\\Users\\Scove\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
