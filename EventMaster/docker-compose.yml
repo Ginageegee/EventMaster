@@ -5,18 +5,20 @@ services:
     build: .
     container_name: eventmaster_app
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
-      - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=eventmaster;user=root;password=
+      - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=eventmaster;user=root;password=${MYSQL_ROOT_PASSWORD}
+      - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
       - mysql
-
+  
+  
   mysql:
     image: mysql:8.0
     container_name: eventmaster_mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 
+      MYSQL_ROOT_PASSWORD: "RootPass123!"
       MYSQL_DATABASE: eventmaster
     ports:
       - "3307:3306"

@@ -2625,35 +2625,29 @@
       "Auth0.AspNetCore.Authentication >= 1.6.1",
       "Microsoft.EntityFrameworkCore >= 8.0.4",
       "Microsoft.EntityFrameworkCore.Design >= 8.0.4",
+      "Microsoft.EntityFrameworkCore.Relational >= 8.0.4",
       "Pomelo.EntityFrameworkCore.MySql >= 8.0.0"
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Regina\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\Scove\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\MyProjects\\EventMaster\\EventMaster\\EventMaster.csproj",
+      "projectUniqueName": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\EventMaster\\EventMaster.csproj",
       "projectName": "EventMaster",
-      "projectPath": "C:\\MyProjects\\EventMaster\\EventMaster\\EventMaster.csproj",
-      "packagesPath": "C:\\Users\\Regina\\.nuget\\packages\\",
-      "outputPath": "C:\\MyProjects\\EventMaster\\EventMaster\\obj\\",
+      "projectPath": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\EventMaster\\EventMaster.csproj",
+      "packagesPath": "C:\\Users\\Scove\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\EventMaster\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\Regina\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\Scove\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -2666,6 +2660,11 @@
         "warnAsError": [
           "NU1605"
         ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
       }
     },
     "frameworks": {
@@ -2683,6 +2682,10 @@
           "Microsoft.EntityFrameworkCore.Design": {
             "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
             "suppressParent": "All",
+            "target": "Package",
+            "version": "[8.0.4, )"
+          },
+          "Microsoft.EntityFrameworkCore.Relational": {
             "target": "Package",
             "version": "[8.0.4, )"
           },
@@ -2710,7 +2713,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "c:\\program files\\dotnet\\sdk\\8.0.101/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.301/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

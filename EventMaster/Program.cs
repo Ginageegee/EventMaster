@@ -24,11 +24,12 @@ builder.Services
         options.Domain = builder.Configuration["Auth0:Domain"];
         options.ClientId = builder.Configuration["Auth0:ClientId"];
         options.ClientSecret = builder.Configuration["Auth0:ClientSecret"];
-        options.CallbackPath = "/callback";
+        options.CallbackPath = "/callback"; // or /Account/Login if you're using MVC
     });
 
-var app = builder.Build();
 
+var app = builder.Build();
+Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
