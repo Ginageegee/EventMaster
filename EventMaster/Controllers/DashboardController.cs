@@ -4,6 +4,7 @@ using EventMaster.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace EventMaster.Controllers;
 
@@ -19,6 +20,8 @@ public class DashboardController : Controller
 
     public async Task<IActionResult> CreateEvent()
     {
+        Console.WriteLine("HIT: Dashboard/CreateEvent (GET)");
+
         var user = await GetCurrentUserAsync();
         if (user == null)
             return RedirectToAction("PostLogin", "Account");
@@ -36,6 +39,8 @@ public class DashboardController : Controller
     [HttpPost]
     public async Task<IActionResult> CreateEvent(Event model)
     {
+        Console.WriteLine("HIT: Dashboard/CreateEvent (POST)");
+
         var user = await GetCurrentUserAsync();
         if (user == null)
             return RedirectToAction("PostLogin", "Account");
@@ -60,6 +65,8 @@ public class DashboardController : Controller
 
     public async Task<IActionResult> Index()
     {
+        Console.WriteLine("HIT: Dashboard/Index");
+
         var user = await GetCurrentUserAsync();
         if (user == null)
             return RedirectToAction("PostLogin", "Account");
@@ -84,8 +91,12 @@ public class DashboardController : Controller
 
     private async Task<User?> GetCurrentUserAsync()
     {
-        var auth0Id = User.FindFirst("sub")?.Value;
+        var auth0Id =
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+            User.FindFirst("sub")?.Value;
+
         Console.WriteLine("Auth0 ID: " + auth0Id);
+
         if (auth0Id == null)
             return null;
 

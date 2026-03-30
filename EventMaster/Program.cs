@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
@@ -11,7 +12,7 @@ builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
         options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = "Auth0";
     })
     .AddCookie()
     .AddOpenIdConnect("Auth0", options =>
@@ -26,6 +27,7 @@ builder.Services.AddAuthentication(options =>
         options.Scope.Add("profile");
         options.Scope.Add("email");
         options.SaveTokens = true;
+        options.GetClaimsFromUserInfoEndpoint = true;
     });
 
 builder.Services.AddDbContext<EventMaster.Data.ApplicationDbContext>(options =>
@@ -33,9 +35,20 @@ builder.Services.AddDbContext<EventMaster.Data.ApplicationDbContext>(options =>
     var conn = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseMySql(conn, ServerVersion.AutoDetect(conn));
 });
+
 var app = builder.Build();
 
-app.UseHttpsRedirection();
+var forwardOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+
+forwardOptions.KnownNetworks.Clear();
+forwardOptions.KnownProxies.Clear();
+
+app.UseForwardedHeaders(forwardOptions);
+
+//app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();

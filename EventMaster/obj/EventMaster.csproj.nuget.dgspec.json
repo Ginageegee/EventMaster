@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\Eventmaster\\EventMaster.csproj": {}
+    "/src/EventMaster.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\Eventmaster\\EventMaster.csproj": {
+    "/src/EventMaster.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\Eventmaster\\EventMaster.csproj",
+        "projectUniqueName": "/src/EventMaster.csproj",
         "projectName": "EventMaster",
-        "projectPath": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\Eventmaster\\EventMaster.csproj",
-        "packagesPath": "C:\\Users\\Scove\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Scove\\OneDrive\\Documents\\Github\\GBC Programming\\Semester 6\\Capstone\\EventMaster\\Eventmaster\\obj\\",
+        "projectPath": "/src/EventMaster.csproj",
+        "packagesPath": "/root/.nuget/packages/",
+        "outputPath": "/src/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Scove\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/root/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -85,7 +85,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.419/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

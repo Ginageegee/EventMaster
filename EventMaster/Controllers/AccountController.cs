@@ -18,6 +18,8 @@ public class AccountController : Controller
 
     public IActionResult Login(string returnUrl = "/Dashboard/Index")
     {
+        Console.WriteLine("HIT: Account/Login");
+
         if (User.Identity?.IsAuthenticated == true)
         {
             return Redirect(returnUrl);
@@ -34,6 +36,8 @@ public class AccountController : Controller
     [Authorize]
     public async Task<IActionResult> PostLogin(string returnUrl = "/Dashboard/Index")
     {
+        Console.WriteLine("HIT: Account/PostLogin");
+
         var user = await EnsureLocalUserAsync();
 
         if (user == null)
@@ -44,19 +48,24 @@ public class AccountController : Controller
         if (string.IsNullOrWhiteSpace(user.FirstName) ||
             string.IsNullOrWhiteSpace(user.LastName))
         {
+            Console.WriteLine("REDIRECT: Missing names → CompleteProfile");
             return RedirectToAction("CompleteProfile");
         }
 
         if (string.IsNullOrWhiteSpace(returnUrl) || !Url.IsLocalUrl(returnUrl))
         {
+            Console.WriteLine("REDIRECT: Invalid returnUrl → Dashboard");
             return RedirectToAction("Index", "Dashboard");
         }
 
+        Console.WriteLine($"REDIRECT: returnUrl → {returnUrl}");
         return Redirect(returnUrl);
     }
 
     public IActionResult Logout()
     {
+        Console.WriteLine("HIT: Account/Logout");
+
         var props = new AuthenticationProperties
         {
             RedirectUri = "/"
@@ -68,6 +77,8 @@ public class AccountController : Controller
     [Authorize]
     public async Task<IActionResult> Profile()
     {
+        Console.WriteLine("HIT: Account/Profile (GET)");
+
         var user = await EnsureLocalUserAsync();
 
         if (user == null)
@@ -83,6 +94,8 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Profile(User model)
     {
+        Console.WriteLine("HIT: Account/Profile (POST)");
+
         var user = await EnsureLocalUserAsync();
 
         if (user == null)
@@ -103,6 +116,8 @@ public class AccountController : Controller
     [HttpGet]
     public async Task<IActionResult> CompleteProfile()
     {
+        Console.WriteLine("HIT: Account/CompleteProfile (GET)");
+
         var user = await EnsureLocalUserAsync();
 
         if (user == null)
@@ -111,6 +126,7 @@ public class AccountController : Controller
         if (!string.IsNullOrWhiteSpace(user.FirstName) &&
             !string.IsNullOrWhiteSpace(user.LastName))
         {
+            Console.WriteLine("REDIRECT: Profile complete → Dashboard");
             return RedirectToAction("Index", "Dashboard");
         }
 
@@ -128,6 +144,8 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CompleteProfile(CompleteProfileViewModel vm)
     {
+        Console.WriteLine("HIT: Account/CompleteProfile (POST)");
+
         if (!ModelState.IsValid)
             return View(vm);
 
@@ -141,18 +159,18 @@ public class AccountController : Controller
 
         await _context.SaveChangesAsync();
 
+        Console.WriteLine("REDIRECT: Profile saved → Dashboard");
         return RedirectToAction("Index", "Dashboard");
     }
 
     private async Task<User?> EnsureLocalUserAsync()
     {
-        var auth0Id =
-            User.FindFirst("sub")?.Value ??
-            User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
-            User.FindFirst("nameidentifier")?.Value;
+        var auth0Id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        Console.WriteLine($"EnsureLocalUserAsync: Auth0Id={auth0Id}");
 
         if (string.IsNullOrWhiteSpace(auth0Id))
         {
+            Console.WriteLine("EnsureLocalUserAsync: No Auth0Id");
             return null;
         }
 
@@ -198,6 +216,7 @@ public class AccountController : Controller
                 await _context.SaveChangesAsync();
             }
 
+            Console.WriteLine($"EnsureLocalUserAsync: Returning existing user {existingUser.UserId}");
             return existingUser;
         }
 
@@ -212,6 +231,7 @@ public class AccountController : Controller
         _context.Users.Add(newUser);
         await _context.SaveChangesAsync();
 
+        Console.WriteLine($"EnsureLocalUserAsync: Created new user {newUser.UserId}");
         return newUser;
     }
 }
