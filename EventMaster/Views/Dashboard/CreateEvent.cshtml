@@ -37,5 +37,23 @@
         <input asp-for="EventTime" type="time" class="form-control"/>
     </div>
 
+    <h4 class="mt-4">Ticket Type</h4>
+
+    <div class="form-group">
+        <label>Ticket Name</label>
+        <input type="text" name="TicketName" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label>Price</label>
+        <input type="number" name="TicketPrice" step="0.01" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label>Quantity Available</label>
+        <input type="number" name="TicketQuantity" class="form-control" required />
+    </div>
+
+
     <button type="submit" class="btn btn-primary">Create Event</button>
 </form>
