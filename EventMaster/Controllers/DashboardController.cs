@@ -39,9 +39,7 @@ public class DashboardController : Controller
     [HttpPost]
     public async Task<IActionResult> CreateEvent(
         Event model,
-        string TicketName,
-        decimal TicketPrice,
-        int TicketQuantity)
+        List<TicketType> TicketTypes)
     {
         Console.WriteLine("HIT: Dashboard/CreateEvent (POST)");
 
@@ -55,26 +53,33 @@ public class DashboardController : Controller
             return View(model);
         }
 
+        // Assign organizer
         model.OrganizerId = user.UserId;
 
+        // Combine EventDate + EventTime into a single DateTime
         model.EventTime = model.EventDate.Date
             .AddHours(model.EventTime.Hour)
             .AddMinutes(model.EventTime.Minute);
 
+        // Save event first so it gets an EventId
         _context.Events.Add(model);
         await _context.SaveChangesAsync();
 
-        // Create the ticket type
-        var ticket = new TicketType
+        // Save all ticket types
+        if (TicketTypes != null)
         {
-            EventId = model.EventId,
-            Name = TicketName,
-            Price = TicketPrice,
-            QuantityAvailable = TicketQuantity
-        };
+            foreach (var tt in TicketTypes)
+            {
+                // Skip empty rows (user added then removed content)
+                if (string.IsNullOrWhiteSpace(tt.Name))
+                    continue;
 
-        _context.TicketTypes.Add(ticket);
-        await _context.SaveChangesAsync();
+                tt.EventId = model.EventId;
+                _context.TicketTypes.Add(tt);
+            }
+
+            await _context.SaveChangesAsync();
+        }
 
         return RedirectToAction("Index");
     }
