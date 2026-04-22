@@ -1,0 +1,123 @@
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model EventMaster.Models.Event
+
+<h2>Edit Event</h2>
+
+<form asp-action="EditEvent" asp-controller="Dashboard" method="post">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="EventId" />
+    <input type="hidden" asp-for="OrganizerId" />
+
+    <div class="form-group mb-3">
+        <label asp-for="VenueId">Venue</label>
+        <select asp-for="VenueId" class="form-control"
+                asp-items="@(new SelectList(ViewBag.Venues, "VenueId", "Name"))">
+            <option value="">Select a venue</option>
+        </select>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="EventName"></label>
+        <input asp-for="EventName" class="form-control" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="EventDescription"></label>
+        <textarea asp-for="EventDescription" class="form-control"></textarea>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="EventDate"></label>
+        <input asp-for="EventDate" type="date" class="form-control" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="EventTime"></label>
+        <input asp-for="EventTime" type="time" class="form-control" />
+    </div>
+
+    <hr />
+
+    <h4 class="mt-4">Ticket Types</h4>
+
+    <div id="ticketTypesContainer">
+
+        @for (int i = 0; i < Model.TicketTypes.Count; i++)
+        {
+            <div class="ticket-type border p-3 mb-3">
+                <input type="hidden" name="TicketTypes[@i].TicketTypeId" value="@Model.TicketTypes[i].TicketTypeId" />
+
+                <div class="form-group mb-2">
+                    <label>Ticket Name</label>
+                    <input type="text" name="TicketTypes[@i].Name" class="form-control"
+                           value="@Model.TicketTypes[i].Name" required />
+                </div>
+
+                <div class="form-group mb-2">
+                    <label>Price</label>
+                    <input type="number" name="TicketTypes[@i].Price" step="0.01" class="form-control"
+                           value="@Model.TicketTypes[i].Price" required />
+                </div>
+
+                <div class="form-group mb-2">
+                    <label>Quantity Available</label>
+                    <input type="number" name="TicketTypes[@i].QuantityAvailable" class="form-control"
+                           value="@Model.TicketTypes[i].QuantityAvailable" required />
+                </div>
+
+                <div class="form-group mb-2">
+                    <label>Requires Seat?</label>
+                    <input type="checkbox" name="TicketTypes[@i].RequiresSeat"
+                           @(Model.TicketTypes[i].RequiresSeat ? "checked" : "") />
+                </div>
+
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">Remove</button>
+            </div>
+        }
+
+    </div>
+
+    <button type="button" class="btn btn-secondary mb-3" onclick="addTicketType()">Add Another Ticket Type</button>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>
+
+<script>
+    let ticketIndex = @Model.TicketTypes.Count;
+
+    function addTicketType() {
+        const container = document.getElementById('ticketTypesContainer');
+
+        const html = `
+            <div class="ticket-type border p-3 mb-3">
+                <input type="hidden" name="TicketTypes[${ticketIndex}].TicketTypeId" value="0" />
+
+                <div class="form-group mb-2">
+                    <label>Ticket Name</label>
+                    <input type="text" name="TicketTypes[${ticketIndex}].Name" class="form-control" required />
+                </div>
+
+                <div class="form-group mb-2">
+                    <label>Price</label>
+                    <input type="number" name="TicketTypes[${ticketIndex}].Price" step="0.01" class="form-control" required />
+                </div>
+
+                <div class="form-group mb-2">
+                    <label>Quantity Available</label>
+                    <input type="number" name="TicketTypes[${ticketIndex}].QuantityAvailable" class="form-control" required />
+                </div>
+
+                <div class="form-group mb-2">
+                    <label>Requires Seat?</label>
+                    <input type="checkbox" name="TicketTypes[${ticketIndex}].RequiresSeat" />
+                </div>
+
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">Remove</button>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', html);
+        ticketIndex++;
+    }
+</script>

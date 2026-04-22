@@ -20,4 +20,5 @@ public class Event
     [ValidateNever]
     public Venue Venue { get; set; }
     
+    public List<TicketType> TicketTypes { get; set; } = new();
 }
