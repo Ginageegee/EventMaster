@@ -1,3 +1,4 @@
+using System;
 using EventMaster.Data;
 using EventMaster.Models;
 using EventMaster.Models.ViewModels;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 public class AccountController : Controller
 {
