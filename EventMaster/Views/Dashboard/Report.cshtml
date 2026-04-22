@@ -1,10 +1,16 @@
 @model EventMaster.Models.ViewModels.EventReportViewModel
 
 @{
-    ViewData["Title"] = "Event Report";
+ViewData["Title"] = "Event Report";
 }
 
 <h2 class="text-white mb-4">Event Report</h2>
+
+<a asp-action="ExportEventCsv"
+   asp-route-id="@Model.Event.EventId"
+   class="btn btn-success mb-3">
+    Export CSV
+</a>
 
 <!-- EVENT SUMMARY -->
 <div class="card bg-dark text-white p-4 mb-4">
@@ -26,9 +32,9 @@
     <p>
         <strong>Sell‑Through Rate:</strong>
         @{
-            var totalAvailable = Model.TicketTypeReports.Sum(t => t.QuantityAvailable);
-            var sold = Model.TotalTicketsSold;
-            var rate = totalAvailable > 0 ? (sold / (double)totalAvailable) * 100 : 0;
+        var totalAvailable = Model.TicketTypeReports.Sum(t => t.QuantityAvailable);
+        var sold = Model.TotalTicketsSold;
+        var rate = totalAvailable > 0 ? (sold / (double)totalAvailable) * 100 : 0;
         }
         @rate.ToString("0.0")%
     </p>
@@ -40,25 +46,25 @@
 
     <table class="table table-bordered table-dark">
         <thead>
-            <tr>
-                <th>Name</th>
-                <th>Price</th>
-                <th>Available</th>
-                <th>Sold</th>
-                <th>Revenue</th>
-            </tr>
+        <tr>
+            <th>Name</th>
+            <th>Current Price</th>
+            <th>Available</th>
+            <th>Sold</th>
+            <th>Revenue (Actual)</th>
+        </tr>
         </thead>
         <tbody>
-            @foreach (var tt in Model.TicketTypeReports)
-            {
-                <tr>
-                    <td>@tt.Name</td>
-                    <td>$@tt.Price</td>
-                    <td>@tt.QuantityAvailable</td>
-                    <td>@tt.QuantitySold</td>
-                    <td>$@tt.Revenue</td>
-                </tr>
-            }
+        @foreach (var tt in Model.TicketTypeReports)
+        {
+        <tr>
+            <td>@tt.Name</td>
+            <td>$@tt.CurrentPrice</td>
+            <td>@tt.QuantityAvailable</td>
+            <td>@tt.QuantitySold</td>
+            <td>$@tt.Revenue</td>
+        </tr>
+        }
         </tbody>
     </table>
 </div>
@@ -69,33 +75,39 @@
 
     @if (!Model.SoldTickets.Any())
     {
-        <p>No tickets sold yet.</p>
+    <p>No tickets sold yet.</p>
     }
     else
     {
-        <table class="table table-bordered table-dark">
-            <thead>
-                <tr>
-                    <th>Buyer</th>
-                    <th>Ticket Type</th>
-                    <th>Price</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var t in Model.SoldTickets)
-                {
-                    <tr>
-                        <td>@(t.OwnerUser == null
-                            ? "Unknown"
-                            : $"{t.OwnerUser.FirstName} {t.OwnerUser.LastName}".Trim())</td>
-                        <td>@t.TicketType?.Name</td>
-                        <td>$@t.Price</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <table class="table table-bordered table-dark">
+        <thead>
+        <tr>
+            <th>Buyer</th>
+            <th>Ticket Type</th>
+            <th>Price Paid</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var t in Model.SoldTickets)
+        {
+        var buyer = t.OwnerUser == null
+        ? "Unknown"
+        : $"{t.OwnerUser.FirstName} {t.OwnerUser.LastName}".Trim();
+
+        if (string.IsNullOrWhiteSpace(buyer) && t.OwnerUser != null)
+        {
+        buyer = t.OwnerUser.Email ?? "Unknown";
+        }
+
+        <tr>
+            <td>@buyer</td>
+            <td>@t.TicketType?.Name</td>
+            <td>$@t.Price</td>
+        </tr>
+        }
+        </tbody>
+    </table>
     }
 </div>
 
 <a asp-action="Index" class="btn btn-secondary">Back to Dashboard</a>
-<a asp-action="ExportEventCsv"asp-route-id="@Model.Event.EventId"class="btn btn-success mb-3">Export CSV</a>

@@ -260,6 +260,7 @@ public class DashboardController : Controller
 
         return RedirectToAction("Index");
     }
+    
     public async Task<IActionResult> Report(int id)
     {
         var user = await GetCurrentUserAsync();
@@ -271,30 +272,42 @@ public class DashboardController : Controller
             .Include(e => e.TicketTypes)
             .Include(e => e.Tickets)
             .ThenInclude(t => t.OwnerUser)
+            .Include(e => e.Tickets)
+            .ThenInclude(t => t.Order)
             .FirstOrDefaultAsync(e => e.EventId == id && e.OrganizerId == user.UserId);
 
         if (ev == null)
             return NotFound();
 
-        // Build ticket type breakdown
+        var soldTickets = ev.Tickets
+            .Where(t => t.OrderId != null)
+            .ToList();
+
         var ticketTypeReports = ev.TicketTypes
-            .Select(tt => new TicketTypeReport
+            .Select(tt =>
             {
-                Name = tt.Name,
-                Price = tt.Price,
-                QuantityAvailable = tt.QuantityAvailable ?? 0,
-                QuantitySold = ev.Tickets.Count(t => t.TicketTypeId == tt.TicketTypeId && t.OrderId != null)
+                var ticketsForType = soldTickets
+                    .Where(t => t.TicketTypeId == tt.TicketTypeId)
+                    .ToList();
+
+                return new TicketTypeReport
+                {
+                    Name = tt.Name,
+                    CurrentPrice = tt.Price,
+                    QuantityAvailable = tt.QuantityAvailable ?? 0,
+                    QuantitySold = ticketsForType.Count,
+                    Revenue = ticketsForType.Sum(t => t.Price)
+                };
             })
             .ToList();
 
-        // Build view model
         var vm = new EventReportViewModel
         {
             Event = ev,
-            TicketTypeReports = ticketTypeReports,
-            SoldTickets = ev.Tickets.Where(t => t.OrderId != null).ToList(),
-            TotalTicketsSold = ev.Tickets.Count(t => t.OrderId != null),
-            TotalRevenue = ev.Tickets.Where(t => t.OrderId != null).Sum(t => t.Price)
+            SoldTickets = soldTickets,
+            TotalTicketsSold = soldTickets.Count,
+            TotalRevenue = soldTickets.Sum(t => t.Price),
+            TicketTypeReports = ticketTypeReports
         };
 
         return View(vm);
@@ -309,18 +322,21 @@ public class DashboardController : Controller
         var ev = await _context.Events
             .Include(e => e.Tickets)
             .ThenInclude(t => t.OwnerUser)
+            .Include(e => e.Tickets)
+            .ThenInclude(t => t.Order)
             .Include(e => e.TicketTypes)
             .FirstOrDefaultAsync(e => e.EventId == id && e.OrganizerId == user.UserId);
 
         if (ev == null)
             return NotFound();
 
-        var soldTickets = ev.Tickets.Where(t => t.OrderId != null).ToList();
+        var soldTickets = ev.Tickets
+            .Where(t => t.OrderId != null)
+            .ToList();
 
         var csv = new StringBuilder();
 
-        // Header row
-        csv.AppendLine("Buyer,Ticket Type,Price,Event,Purchase Date");
+        csv.AppendLine("Buyer,Ticket Type,Price,Event");
 
         foreach (var t in soldTickets)
         {
@@ -328,15 +344,18 @@ public class DashboardController : Controller
                 ? "Unknown"
                 : $"{t.OwnerUser.FirstName} {t.OwnerUser.LastName}".Trim();
 
-            var ticketType = ev.TicketTypes.FirstOrDefault(tt => tt.TicketTypeId == t.TicketTypeId)?.Name ?? "Unknown";
+            if (string.IsNullOrWhiteSpace(buyer) && t.OwnerUser != null)
+                buyer = t.OwnerUser.Email ?? "Unknown";
 
-            var purchaseDate = t.Order?.OrderDate.ToString("yyyy-MM-dd HH:mm") ?? "";
+            var ticketType = ev.TicketTypes
+                .FirstOrDefault(tt => tt.TicketTypeId == t.TicketTypeId)?.Name ?? "Unknown";
 
-            csv.AppendLine($"{buyer},{ticketType},${t.Price},{ev.EventName},{purchaseDate}");
+            csv.AppendLine($"{buyer},{ticketType},{t.Price},{ev.EventName}");
         }
 
         var bytes = Encoding.UTF8.GetBytes(csv.ToString());
-        var fileName = $"{ev.EventName}_Report.csv";
+        var safeName = string.Join("_", ev.EventName.Split(Path.GetInvalidFileNameChars()));
+        var fileName = $"{safeName}_Report.csv";
 
         return File(bytes, "text/csv", fileName);
     }
