@@ -28,7 +28,8 @@
 
     <div class="form-group mb-3">
         <label asp-for="EventDate"></label>
-        <input asp-for="EventDate" type="date" class="form-control" />
+        <input asp-for="EventDate" type="date" class="form-control"
+               value="@DateTime.Today.ToString("yyyy-MM-dd")" />
     </div>
 
     <div class="form-group mb-3">
