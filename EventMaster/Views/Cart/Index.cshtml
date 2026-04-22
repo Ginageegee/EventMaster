@@ -1,0 +1,75 @@
+@model EventMaster.Models.Cart
+
+@{
+    ViewData["Title"] = "My Cart";
+    decimal total = 0;
+}
+
+<h2>My Cart</h2>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success">@success</div>
+}
+
+@if (Model == null || Model.Items == null || !Model.Items.Any())
+{
+    <p>Your cart is empty.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Ticket Type</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model.Items)
+        {
+            var price = item.TicketType?.Price ?? 0;
+            var subtotal = price * item.Quantity;
+            total += subtotal;
+
+            <tr>
+                <td>@item.TicketType?.Name</td>
+                <td>@price.ToString("C")</td>
+                <td>
+                    <form asp-action="UpdateQuantity" method="post" class="d-flex gap-2 align-items-center">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="cartItemId" value="@item.CartItemId" />
+                        <input type="number" name="quantity" value="@item.Quantity" min="1" class="form-control" style="width:90px;" />
+                        <button type="submit" class="btn btn-sm btn-warning">Update</button>
+                    </form>
+                </td>
+                <td>@subtotal.ToString("C")</td>
+                <td>
+                    <form asp-action="RemoveItem" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="cartItemId" value="@item.CartItemId" />
+                        <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <h4>Total: @total.ToString("C")</h4>
+
+        <form asp-action="Checkout" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-success btn-lg">Checkout</button>
+        </form>
+    </div>
+}
