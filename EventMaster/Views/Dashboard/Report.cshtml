@@ -1,0 +1,100 @@
+@model EventMaster.Models.ViewModels.EventReportViewModel
+
+@{
+    ViewData["Title"] = "Event Report";
+}
+
+<h2 class="text-white mb-4">Event Report</h2>
+
+<!-- EVENT SUMMARY -->
+<div class="card bg-dark text-white p-4 mb-4">
+    <h3>@Model.Event.EventName</h3>
+    <p>@Model.Event.EventDescription</p>
+
+    <p><strong>Venue:</strong> @Model.Event.Venue?.Name</p>
+    <p><strong>Date:</strong> @Model.Event.EventDate.ToShortDateString()</p>
+    <p><strong>Time:</strong> @Model.Event.EventTime.ToShortTimeString()</p>
+</div>
+
+<!-- EVENT METRICS -->
+<div class="card bg-dark text-white p-4 mb-4">
+    <h4>Event Summary</h4>
+
+    <p><strong>Total Tickets Sold:</strong> @Model.TotalTicketsSold</p>
+    <p><strong>Total Revenue:</strong> $@Model.TotalRevenue</p>
+
+    <p>
+        <strong>Sell‑Through Rate:</strong>
+        @{
+            var totalAvailable = Model.TicketTypeReports.Sum(t => t.QuantityAvailable);
+            var sold = Model.TotalTicketsSold;
+            var rate = totalAvailable > 0 ? (sold / (double)totalAvailable) * 100 : 0;
+        }
+        @rate.ToString("0.0")%
+    </p>
+</div>
+
+<!-- TICKET TYPE BREAKDOWN -->
+<div class="card bg-dark text-white p-4 mb-4">
+    <h4>Ticket Type Breakdown</h4>
+
+    <table class="table table-bordered table-dark">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Available</th>
+                <th>Sold</th>
+                <th>Revenue</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var tt in Model.TicketTypeReports)
+            {
+                <tr>
+                    <td>@tt.Name</td>
+                    <td>$@tt.Price</td>
+                    <td>@tt.QuantityAvailable</td>
+                    <td>@tt.QuantitySold</td>
+                    <td>$@tt.Revenue</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- ATTENDEE LIST -->
+<div class="card bg-dark text-white p-4 mb-4">
+    <h4>Attendee List</h4>
+
+    @if (!Model.SoldTickets.Any())
+    {
+        <p>No tickets sold yet.</p>
+    }
+    else
+    {
+        <table class="table table-bordered table-dark">
+            <thead>
+                <tr>
+                    <th>Buyer</th>
+                    <th>Ticket Type</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model.SoldTickets)
+                {
+                    <tr>
+                        <td>@(t.OwnerUser == null
+                            ? "Unknown"
+                            : $"{t.OwnerUser.FirstName} {t.OwnerUser.LastName}".Trim())</td>
+                        <td>@t.TicketType?.Name</td>
+                        <td>$@t.Price</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<a asp-action="Index" class="btn btn-secondary">Back to Dashboard</a>

@@ -259,6 +259,45 @@ public class DashboardController : Controller
 
         return RedirectToAction("Index");
     }
+    public async Task<IActionResult> Report(int id)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user == null)
+            return RedirectToAction("PostLogin", "Account");
+
+        var ev = await _context.Events
+            .Include(e => e.Venue)
+            .Include(e => e.TicketTypes)
+            .Include(e => e.Tickets)
+            .ThenInclude(t => t.OwnerUser)
+            .FirstOrDefaultAsync(e => e.EventId == id && e.OrganizerId == user.UserId);
+
+        if (ev == null)
+            return NotFound();
+
+        // Build ticket type breakdown
+        var ticketTypeReports = ev.TicketTypes
+            .Select(tt => new TicketTypeReport
+            {
+                Name = tt.Name,
+                Price = tt.Price,
+                QuantityAvailable = tt.QuantityAvailable ?? 0,
+                QuantitySold = ev.Tickets.Count(t => t.TicketTypeId == tt.TicketTypeId && t.OrderId != null)
+            })
+            .ToList();
+
+        // Build view model
+        var vm = new EventReportViewModel
+        {
+            Event = ev,
+            TicketTypeReports = ticketTypeReports,
+            SoldTickets = ev.Tickets.Where(t => t.OrderId != null).ToList(),
+            TotalTicketsSold = ev.Tickets.Count(t => t.OrderId != null),
+            TotalRevenue = ev.Tickets.Where(t => t.OrderId != null).Sum(t => t.Price)
+        };
+
+        return View(vm);
+    }
     
     private async Task<User?> GetCurrentUserAsync()
     {
