@@ -1,0 +1,14 @@
+@model EventMaster.Models.Venue
+
+<h2 class="text-white mb-4">Delete Venue</h2>
+
+<div class="alert alert-danger">
+    Are you sure you want to delete the venue <strong>@Model.Name</strong>?
+</div>
+
+<form asp-action="DeleteVenueConfirmed" method="post">
+    <input type="hidden" name="venueId" value="@Model.VenueId" />
+
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="Venues" class="btn btn-secondary">Cancel</a>
+</form>

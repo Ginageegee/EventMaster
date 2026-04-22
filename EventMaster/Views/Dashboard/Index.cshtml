@@ -9,6 +9,8 @@
 
 <a class="btn btn-primary mb-4" asp-action="CreateEvent">+ Create New Event</a>
 <a class="btn btn-secondary mb-3" asp-controller="Account" asp-action="Profile">+ Manage Account</a>
+<a asp-action="Venues" class="btn btn-outline-light btn-lg mb-3">Manage Venues</a>
+
 @if (!Model.MyEvents.Any())
 {
     <p class="text-white">You haven't created any events yet.</p>

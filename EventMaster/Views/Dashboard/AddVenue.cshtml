@@ -1,0 +1,32 @@
+@model EventMaster.Models.Venue
+
+<h2 class="text-white mb-4">Add Venue</h2>
+
+<form asp-action="AddVenue" method="post">
+    <div class="form-group">
+        <label asp-for="Name"></label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Address"></label>
+        <input asp-for="Address" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Capacity"></label>
+        <input asp-for="Capacity" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Phonenumber"></label>
+        <input asp-for="Phonenumber" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="VenueDescription"></label>
+        <textarea asp-for="VenueDescription" class="form-control"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">Save Venue</button>
+</form>

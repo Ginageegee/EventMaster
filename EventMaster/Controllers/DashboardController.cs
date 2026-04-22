@@ -88,26 +88,28 @@ public class DashboardController : Controller
     public async Task<IActionResult> Index()
     {
         Console.WriteLine("HIT: Dashboard/Index");
-
+    
         var user = await GetCurrentUserAsync();
         if (user == null)
             return RedirectToAction("PostLogin", "Account");
-
+    
         var myEvents = await _context.Events
             .Where(e => e.OrganizerId == user.UserId)
+            .Include(e => e.Venue)              
+            .OrderBy(e => e.EventDate)
             .ToListAsync();
-
+    
         var myTickets = await _context.Tickets
             .Include(t => t.Event)
             .Where(t => t.OwnerUserId == user.UserId)
             .ToListAsync();
-
+    
         var viewModel = new DashboardViewModel
         {
             MyEvents = myEvents,
             MyTickets = myTickets
         };
-
+    
         return View(viewModel);
     }
     
@@ -358,6 +360,68 @@ public class DashboardController : Controller
         var fileName = $"{safeName}_Report.csv";
 
         return File(bytes, "text/csv", fileName);
+    }
+    
+    // GET: Dashboard/Venues
+    public async Task<IActionResult> Venues()
+    {
+        var user = await GetCurrentUserAsync();
+        if (user == null)
+            return RedirectToAction("PostLogin", "Account");
+
+        var venues = await _context.Venues.ToListAsync();
+        return View(venues);
+    }
+    
+    public IActionResult AddVenue()
+    {
+        return View();
+    }
+    
+    [HttpPost]
+    public async Task<IActionResult> AddVenue(Venue venue)
+    {
+        if (!ModelState.IsValid)
+            return View(venue);
+
+        _context.Venues.Add(venue);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Venues");
+    }
+    
+    public async Task<IActionResult> DeleteVenue(int id)
+    {
+        var venue = await _context.Venues
+            .Include(v => v.Sections)
+            .FirstOrDefaultAsync(v => v.VenueId == id);
+
+        if (venue == null)
+            return NotFound();
+
+        // Check if any events use this venue
+        bool hasEvents = await _context.Events.AnyAsync(e => e.VenueId == id);
+        if (hasEvents)
+        {
+            TempData["Error"] = "This venue cannot be deleted because it is assigned to one or more events.";
+            return RedirectToAction("Venues");
+        }
+
+        return View(venue);
+    }
+    
+    [HttpPost]
+    public async Task<IActionResult> DeleteVenueConfirmed(int venueId)
+    {
+        var venue = await _context.Venues.FindAsync(venueId);
+        if (venue == null)
+            return NotFound();
+
+        _context.Venues.Remove(venue);
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "Venue deleted successfully.";
+        return RedirectToAction("Venues");
     }
     
     private async Task<User?> GetCurrentUserAsync()
