@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text;
 
 namespace EventMaster.Controllers;
 
@@ -297,6 +298,47 @@ public class DashboardController : Controller
         };
 
         return View(vm);
+    }
+    
+    public async Task<IActionResult> ExportEventCsv(int id)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user == null)
+            return RedirectToAction("PostLogin", "Account");
+
+        var ev = await _context.Events
+            .Include(e => e.Tickets)
+            .ThenInclude(t => t.OwnerUser)
+            .Include(e => e.TicketTypes)
+            .FirstOrDefaultAsync(e => e.EventId == id && e.OrganizerId == user.UserId);
+
+        if (ev == null)
+            return NotFound();
+
+        var soldTickets = ev.Tickets.Where(t => t.OrderId != null).ToList();
+
+        var csv = new StringBuilder();
+
+        // Header row
+        csv.AppendLine("Buyer,Ticket Type,Price,Event,Purchase Date");
+
+        foreach (var t in soldTickets)
+        {
+            var buyer = t.OwnerUser == null
+                ? "Unknown"
+                : $"{t.OwnerUser.FirstName} {t.OwnerUser.LastName}".Trim();
+
+            var ticketType = ev.TicketTypes.FirstOrDefault(tt => tt.TicketTypeId == t.TicketTypeId)?.Name ?? "Unknown";
+
+            var purchaseDate = t.Order?.OrderDate.ToString("yyyy-MM-dd HH:mm") ?? "";
+
+            csv.AppendLine($"{buyer},{ticketType},${t.Price},{ev.EventName},{purchaseDate}");
+        }
+
+        var bytes = Encoding.UTF8.GetBytes(csv.ToString());
+        var fileName = $"{ev.EventName}_Report.csv";
+
+        return File(bytes, "text/csv", fileName);
     }
     
     private async Task<User?> GetCurrentUserAsync()

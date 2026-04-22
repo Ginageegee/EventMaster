@@ -14,4 +14,6 @@ public class Order
     
     public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 
+    public DateTime OrderDate { get; set; } = DateTime.UtcNow;
+
 }
