@@ -2,94 +2,275 @@
 @model EventMaster.Models.ViewModels.DashboardViewModel
 
 @{
-    ViewData["Title"] = "Organizer Dashboard";
+ViewData["Title"] = "Organizer Dashboard";
 }
 
-<h2 class="text-white mb-3">Your Events</h2>
+<style>
+    .carousel-control-prev,
+    .carousel-control-next {
+        width: 5%;
+        top: 50%;
+        transform: translateY(-50%);
+        bottom: auto;
+    }
 
-<a class="btn btn-primary mb-4" asp-action="CreateEvent">+ Create New Event</a>
-<a class="btn btn-secondary mb-3" asp-controller="Account" asp-action="Profile">+ Manage Account</a>
-<a asp-action="Venues" class="btn btn-outline-light btn-lg mb-3">Manage Venues</a>
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+        background-image: none;
+        mask-size: contain;
+        mask-repeat: no-repeat;
+        mask-position: center;
+        background-color: white;
+        width: 3rem;
+        height: 3rem;
+    }
 
-@if (!Model.MyEvents.Any())
-{
-    <p class="text-white">You haven't created any events yet.</p>
-}
-else
-{
-    var grouped = Model.MyEvents
-        .OrderBy(e => e.Venue?.Name)
-        .ThenBy(e => e.EventDate)
-        .GroupBy(e => e.Venue?.Name ?? "No Venue Selected");
+    .carousel-control-prev-icon {
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z'/%3E%3C/svg%3E");
+    }
 
-    foreach (var group in grouped)
-    {
-        <h4 class="mt-4 text-white">@group.Key</h4>
+    .carousel-control-next-icon {
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 1.646a.5.5 0 0 1 .708 0l5 5a.5.5 0 0 1 0 .708l-5 5a.5.5 0 1 1-.708-.708L9.293 7 4.646 2.354a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    }
 
+    .venue-slide {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+</style>
+
+<h2 class="text-white mb-4">Dashboard</h2>
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#events">Your Events</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tickets">Your Tickets</a>
+    </li>
+</ul>
+
+<div class="tab-content">
+
+    <div class="tab-pane fade show active" id="events">
+
+        <a class="btn btn-primary mb-4" asp-action="CreateEvent">+ Create New Event</a>
+        <a class="btn btn-outline-light mb-4" asp-action="Venues">Manage Venues</a>
+
+        @if (!Model.MyEvents.Any())
+        {
+        <p class="text-white">You haven't created any events yet.</p>
+        }
+        else
+        {
+        var eventsByVenue = Model.MyEvents
+        .GroupBy(e => e.Venue?.Name ?? "No Venue Selected")
+        .OrderBy(g => g.Key)
+        .ToList();
+
+        <div id="venueCarousel" class="carousel slide"
+             data-bs-interval="false"
+             data-bs-pause="false"
+             data-bs-keyboard="false">
+
+            <div class="carousel-inner">
+
+                @{
+                int venueIndex = 0;
+                }
+
+                @foreach (var venueGroup in eventsByVenue)
+                {
+                var venueName = venueGroup.Key;
+                var venueEvents = venueGroup.ToList();
+
+                var today = DateTime.Today;
+
+                var startOfWeek = today.AddDays(-(int)today.DayOfWeek + (int)DayOfWeek.Monday);
+                var endOfWeek = startOfWeek.AddDays(6);
+                var startOfNextWeek = startOfWeek.AddDays(7);
+                var endOfNextWeek = startOfNextWeek.AddDays(6);
+
+                var thisWeek = venueEvents
+                .Where(e => e.EventDate >= startOfWeek && e.EventDate <= endOfWeek)
+                .OrderBy(e => e.EventDate)
+                .ToList();
+
+                var nextWeek = venueEvents
+                .Where(e => e.EventDate >= startOfNextWeek && e.EventDate <= endOfNextWeek)
+                .OrderBy(e => e.EventDate)
+                .ToList();
+
+                var upcoming = venueEvents
+                .Where(e => e.EventDate > endOfNextWeek)
+                .OrderBy(e => e.EventDate)
+                .ToList();
+
+                <div class="carousel-item @(venueIndex == 0 ? "active" : "")">
+
+                    <div class="venue-slide">
+
+                        <h3 class="text-white mb-3">@venueName</h3>
+
+                        <div class="accordion" id="accordion_@venueIndex">
+
+                            @if (thisWeek.Any())
+                            {
+                            <div class="accordion-item bg-dark text-white border-secondary">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button bg-dark text-white" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#thisWeek_@venueIndex">
+                                        This Week (@thisWeek.Count)
+                                    </button>
+                                </h2>
+
+                                <div id="thisWeek_@venueIndex" class="accordion-collapse collapse show">
+                                    <div class="accordion-body">
+                                        <div class="d-flex flex-wrap gap-3">
+                                            @foreach (var evt in thisWeek)
+                                            {
+                                            <div class="event-card p-3 bg-dark border border-secondary rounded"
+                                                 style="width: 280px;">
+                                                <strong class="text-white">@evt.EventName</strong>
+                                                <div class="text-light">
+                                                    @evt.EventDate.ToLongDateString() — @evt.EventTime.ToShortTimeString()
+                                                </div>
+                                                <div class="mt-2">
+                                                    <a asp-action="EditEvent" asp-route-id="@evt.EventId" class="btn btn-warning btn-sm me-1">Edit</a>
+                                                    <a asp-action="DeleteEvent" asp-route-id="@evt.EventId" class="btn btn-danger btn-sm me-1">Delete</a>
+                                                    <a asp-action="Report" asp-route-id="@evt.EventId" class="btn btn-info btn-sm">Report</a>
+                                                </div>
+                                            </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            }
+
+                            @if (nextWeek.Any())
+                            {
+                            <div class="accordion-item bg-dark text-white border-secondary">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#nextWeek_@venueIndex">
+                                        Next Week (@nextWeek.Count)
+                                    </button>
+                                </h2>
+
+                                <div id="nextWeek_@venueIndex" class="accordion-collapse collapse">
+                                    <div class="accordion-body">
+                                        <div class="d-flex flex-wrap gap-3">
+                                            @foreach (var evt in nextWeek)
+                                            {
+                                            <div class="event-card p-3 bg-dark border border-secondary rounded"
+                                                 style="width: 280px;">
+                                                <strong class="text-white">@evt.EventName</strong>
+                                                <div class="text-light">
+                                                    @evt.EventDate.ToLongDateString() — @evt.EventTime.ToShortTimeString()
+                                                </div>
+                                                <div class="mt-2">
+                                                    <a asp-action="EditEvent" asp-route-id="@evt.EventId" class="btn btn-warning btn-sm me-1">Edit</a>
+                                                    <a asp-action="DeleteEvent" asp-route-id="@evt.EventId" class="btn btn-danger btn-sm me-1">Delete</a>
+                                                    <a asp-action="Report" asp-route-id="@evt.EventId" class="btn btn-info btn-sm">Report</a>
+                                                </div>
+                                            </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            }
+
+                            @if (upcoming.Any())
+                            {
+                            <div class="accordion-item bg-dark text-white border-secondary">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#upcoming_@venueIndex">
+                                        Upcoming (@upcoming.Count)
+                                    </button>
+                                </h2>
+
+                                <div id="upcoming_@venueIndex" class="accordion-collapse collapse">
+                                    <div class="accordion-body">
+                                        <div class="d-flex flex-wrap gap-3">
+                                            @foreach (var evt in upcoming)
+                                            {
+                                            <div class="event-card p-3 bg-dark border border-secondary rounded"
+                                                 style="width: 280px;">
+                                                <strong class="text-white">@evt.EventName</strong>
+                                                <div class="text-light">
+                                                    @evt.EventDate.ToLongDateString() — @evt.EventTime.ToShortTimeString()
+                                                </div>
+                                                <div class="mt-2">
+                                                    <a asp-action="EditEvent" asp-route-id="@evt.EventId" class="btn btn-warning btn-sm me-1">Edit</a>
+                                                    <a asp-action="DeleteEvent" asp-route-id="@evt.EventId" class="btn btn-danger btn-sm me-1">Delete</a>
+                                                    <a asp-action="Report" asp-route-id="@evt.EventId" class="btn btn-info btn-sm">Report</a>
+                                                </div>
+                                            </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            }
+
+                        </div>
+                    </div>
+                </div>
+
+                venueIndex++;
+                }
+            </div>
+
+            <button class="carousel-control-prev" type="button" data-bs-target="#venueCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#venueCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon"></span>
+            </button>
+
+        </div>
+        }
+    </div>
+
+    <div class="tab-pane fade" id="tickets">
+
+        <h3 class="text-white mb-3">Your Tickets</h3>
+
+        @if (!Model.MyTickets.Any())
+        {
+        <p class="text-white">You haven't purchased any tickets yet.</p>
+        }
+        else
+        {
         <table class="table table-bordered table-hover text-white">
             <thead class="table-dark">
-                <tr>
-                    <th class="text-white">Event</th>
-                    <th class="text-white">Date</th>
-                    <th class="text-white">Time</th>
-                    <th class="text-white" style="width: 220px;">Actions</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                @foreach (var evt in group)
-                {
-                    <tr>
-                        <td class="text-white">
-                            <strong>@evt.EventName</strong><br />
-                            <small class="text-light">@evt.EventDescription</small>
-                        </td>
-                        <td class="text-white">@evt.EventDate.ToShortDateString()</td>
-                        <td class="text-white">@evt.EventTime.ToShortTimeString()</td>
-                        <td>
-                            <a asp-action="EditEvent" asp-route-id="@evt.EventId" class="btn btn-warning btn-sm me-1">Edit</a>
-                            <a asp-action="DeleteEvent" asp-route-id="@evt.EventId" class="btn btn-danger btn-sm me-1">Delete</a>
-                            <a asp-action="Report" asp-route-id="@evt.EventId" class="btn btn-info btn-sm">Report</a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-}
-
-<hr class="text-white my-5" />
-
-<h2 class="text-white mb-3">Your Tickets</h2>
-
-@if (!Model.MyTickets.Any())
-{
-    <p class="text-white">You haven't purchased any tickets yet.</p>
-}
-else
-{
-    <table class="table table-bordered table-hover text-white">
-        <thead class="table-dark">
             <tr>
                 <th class="text-white">Event</th>
                 <th class="text-white">Date</th>
                 <th class="text-white">Price</th>
                 <th class="text-white">Status</th>
             </tr>
-        </thead>
+            </thead>
 
-        <tbody>
+            <tbody>
             @foreach (var ticket in Model.MyTickets)
             {
-                <tr>
-                    <td class="text-white">@ticket.Event.EventName</td>
-                    <td class="text-white">@ticket.Event.EventDate.ToShortDateString()</td>
-                    <td class="text-white">$@ticket.Price</td>
-                    <td class="text-white">
-                        @(ticket.IsListedForSale ? "Listed for Sale" : "Owned")
-                    </td>
-                </tr>
+            <tr>
+                <td class="text-white">@ticket.Event.EventName</td>
+                <td class="text-white">@ticket.Event.EventDate.ToShortDateString()</td>
+                <td class="text-white">$@ticket.Price</td>
+                <td class="text-white">
+                    @(ticket.IsListedForSale ? "Listed for Sale" : "Owned")
+                </td>
+            </tr>
             }
-        </tbody>
-    </table>
-}
+            </tbody>
+        </table>
+        }
+    </div>
+
+</div>
