@@ -129,74 +129,137 @@ public class DashboardController : Controller
     }
     
     [HttpPost]
-public async Task<IActionResult> EditEvent(
-    Event model,
-    List<TicketType> TicketTypes)
-{
-    var user = await GetCurrentUserAsync();
-    if (user == null)
-        return RedirectToAction("PostLogin", "Account");
-
-    if (!ModelState.IsValid)
+    public async Task<IActionResult> EditEvent(
+        Event model,
+        List<TicketType> TicketTypes)
     {
-        ViewBag.Venues = await _context.Venues.ToListAsync();
-        return View(model);
-    }
+        var user = await GetCurrentUserAsync();
+        if (user == null)
+            return RedirectToAction("PostLogin", "Account");
 
-    // Load existing event
-    var ev = await _context.Events
-        .Include(e => e.TicketTypes)
-        .FirstOrDefaultAsync(e => e.EventId == model.EventId && e.OrganizerId == user.UserId);
-
-    if (ev == null)
-        return NotFound();
-
-    // Update event fields
-    ev.EventName = model.EventName;
-    ev.EventDescription = model.EventDescription;
-    ev.VenueId = model.VenueId;
-
-    ev.EventTime = model.EventDate.Date
-        .AddHours(model.EventTime.Hour)
-        .AddMinutes(model.EventTime.Minute);
-
-    // --- Ticket Type Sync Logic ---
-
-    // 1. Update existing ticket types
-    foreach (var tt in TicketTypes.Where(t => t.TicketTypeId != 0))
-    {
-        var existing = ev.TicketTypes.FirstOrDefault(x => x.TicketTypeId == tt.TicketTypeId);
-        if (existing != null)
+        if (!ModelState.IsValid)
         {
-            existing.Name = tt.Name;
-            existing.Price = tt.Price;
-            existing.RequiresSeat = tt.RequiresSeat;
-            existing.QuantityAvailable = tt.QuantityAvailable;
+            ViewBag.Venues = await _context.Venues.ToListAsync();
+            return View(model);
         }
-    }
 
-    // 2. Add new ticket types
-    foreach (var tt in TicketTypes.Where(t => t.TicketTypeId == 0))
-    {
-        if (!string.IsNullOrWhiteSpace(tt.Name))
+        // Load existing event
+        var ev = await _context.Events
+            .Include(e => e.TicketTypes)
+            .FirstOrDefaultAsync(e => e.EventId == model.EventId && e.OrganizerId == user.UserId);
+
+        if (ev == null)
+            return NotFound();
+
+        // Update event fields
+        ev.EventName = model.EventName;
+        ev.EventDescription = model.EventDescription;
+        ev.VenueId = model.VenueId;
+
+        ev.EventTime = model.EventDate.Date
+            .AddHours(model.EventTime.Hour)
+            .AddMinutes(model.EventTime.Minute);
+
+        // --- Ticket Type Sync Logic ---
+        // 1. Update existing ticket types
+        foreach (var tt in TicketTypes.Where(t => t.TicketTypeId != 0))
         {
-            tt.EventId = ev.EventId;
-            _context.TicketTypes.Add(tt);
+            var existing = ev.TicketTypes.FirstOrDefault(x => x.TicketTypeId == tt.TicketTypeId);
+            if (existing != null)
+            {
+                existing.Name = tt.Name;
+                existing.Price = tt.Price;
+                existing.RequiresSeat = tt.RequiresSeat;
+                existing.QuantityAvailable = tt.QuantityAvailable;
+            }
         }
+
+        // 2. Add new ticket types
+        foreach (var tt in TicketTypes.Where(t => t.TicketTypeId == 0))
+        {
+            if (!string.IsNullOrWhiteSpace(tt.Name))
+            {
+                tt.EventId = ev.EventId;
+                _context.TicketTypes.Add(tt);
+            }
+        }
+
+        // 3. Remove deleted ticket types
+        var postedIds = TicketTypes.Where(t => t.TicketTypeId != 0).Select(t => t.TicketTypeId).ToList();
+        var toRemove = ev.TicketTypes.Where(t => !postedIds.Contains(t.TicketTypeId)).ToList();
+
+        foreach (var remove in toRemove)
+            _context.TicketTypes.Remove(remove);
+
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Index");
+    }
+    
+    public async Task<IActionResult> DeleteEvent(int id)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user == null)
+            return RedirectToAction("PostLogin", "Account");
+
+        var ev = await _context.Events
+            .Include(e => e.TicketTypes)
+            .Include(e => e.Tickets)
+            .FirstOrDefaultAsync(e => e.EventId == id && e.OrganizerId == user.UserId);
+
+        if (ev == null)
+            return NotFound();
+
+        // Calculate total refund for purchased tickets
+        var totalRefund = ev.Tickets
+            .Where(t => t.OrderId != null)
+            .Sum(t => t.Price);
+
+        ViewBag.TotalRefund = totalRefund;
+
+        return View(ev);
     }
 
-    // 3. Remove deleted ticket types
-    var postedIds = TicketTypes.Where(t => t.TicketTypeId != 0).Select(t => t.TicketTypeId).ToList();
-    var toRemove = ev.TicketTypes.Where(t => !postedIds.Contains(t.TicketTypeId)).ToList();
 
-    foreach (var remove in toRemove)
-        _context.TicketTypes.Remove(remove);
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteEventConfirmed(int id, decimal expectedRefund, string refundConfirmation)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user == null)
+            return RedirectToAction("PostLogin", "Account");
 
-    await _context.SaveChangesAsync();
+        var ev = await _context.Events
+            .Include(e => e.TicketTypes)
+            .Include(e => e.Tickets)
+            .FirstOrDefaultAsync(e => e.EventId == id && e.OrganizerId == user.UserId);
 
-    return RedirectToAction("Index");
-}
+        if (ev == null)
+            return NotFound();
 
+        var actualRefund = ev.Tickets
+            .Where(t => t.OrderId != null)
+            .Sum(t => t.Price);
+
+        if (!decimal.TryParse(refundConfirmation, out var entered) || entered != actualRefund)
+        {
+            TempData["Error"] = "Refund amount does not match. Event was not deleted.";
+            return RedirectToAction("DeleteEvent", new { id });
+        }
+
+        if (ev.Tickets != null)
+            _context.Tickets.RemoveRange(ev.Tickets);
+
+        if (ev.TicketTypes != null)
+            _context.TicketTypes.RemoveRange(ev.TicketTypes);
+
+        _context.Events.Remove(ev);
+
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Index");
+    }
+    
     private async Task<User?> GetCurrentUserAsync()
     {
         var auth0Id =

@@ -21,4 +21,5 @@ public class Event
     public Venue Venue { get; set; }
     
     public List<TicketType> TicketTypes { get; set; } = new();
+    public List<Ticket> Tickets { get; set; } = new();
 }
