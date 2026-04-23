@@ -3,7 +3,9 @@
 
 <h2>Create Event</h2>
 
-<form asp-action="CreateEvent" asp-controller="Dashboard" method="post">
+<div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+<form asp-action="CreateEvent" asp-controller="Dashboard" method="post" enctype="multipart/form-data">
     @Html.AntiForgeryToken()
 
     <input type="hidden" asp-for="OrganizerId" />
@@ -14,27 +16,38 @@
                 asp-items="@(new SelectList(ViewBag.Venues, "VenueId", "Name"))">
             <option value="">Select a venue</option>
         </select>
+        <span asp-validation-for="VenueId" class="text-danger"></span>
     </div>
 
     <div class="form-group mb-3">
         <label asp-for="EventName"></label>
         <input asp-for="EventName" class="form-control" />
+        <span asp-validation-for="EventName" class="text-danger"></span>
     </div>
 
     <div class="form-group mb-3">
         <label asp-for="EventDescription"></label>
         <textarea asp-for="EventDescription" class="form-control"></textarea>
+        <span asp-validation-for="EventDescription" class="text-danger"></span>
     </div>
 
     <div class="form-group mb-3">
         <label asp-for="EventDate"></label>
         <input asp-for="EventDate" type="date" class="form-control"
                value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+        <span asp-validation-for="EventDate" class="text-danger"></span>
     </div>
 
     <div class="form-group mb-3">
         <label asp-for="EventTime"></label>
         <input asp-for="EventTime" type="time" class="form-control" />
+        <span asp-validation-for="EventTime" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label>Upload Event Image or Video</label>
+        <input type="file" name="MediaFile" class="form-control" accept="image/*,video/*" />
+        <small class="text-muted">Supported: Images or Videos</small>
     </div>
 
     <hr />

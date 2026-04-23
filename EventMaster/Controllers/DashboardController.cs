@@ -1,11 +1,17 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using EventMaster.Data;
 using EventMaster.Models;
 using EventMaster.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace EventMaster.Controllers;
 
@@ -37,82 +43,130 @@ public class DashboardController : Controller
         return View(model);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> CreateEvent(
-        Event model,
-        List<TicketType> TicketTypes)
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> CreateEvent(
+    Event model,
+    List<TicketType> TicketTypes,
+    IFormFile? MediaFile)
+{
+    Console.WriteLine("HIT: Dashboard/CreateEvent (POST)");
+
+    var user = await GetCurrentUserAsync();
+    if (user == null)
+        return RedirectToAction("PostLogin", "Account");
+
+    if (!ModelState.IsValid)
     {
-        Console.WriteLine("HIT: Dashboard/CreateEvent (POST)");
+        Console.WriteLine("ModelState is invalid in CreateEvent.");
 
-        var user = await GetCurrentUserAsync();
-        if (user == null)
-            return RedirectToAction("PostLogin", "Account");
-
-        if (!ModelState.IsValid)
+        foreach (var entry in ModelState)
         {
-            ViewBag.Venues = await _context.Venues.ToListAsync();
-            return View(model);
+            foreach (var error in entry.Value.Errors)
+            {
+                Console.WriteLine($"FIELD: {entry.Key} | ERROR: {error.ErrorMessage}");
+            }
         }
 
-        // Assign organizer
-        model.OrganizerId = user.UserId;
+        ViewBag.Venues = await _context.Venues.ToListAsync();
+        return View(model);
+    }
 
-        // Combine EventDate + EventTime into a single DateTime
-        model.EventTime = model.EventDate.Date
-            .AddHours(model.EventTime.Hour)
-            .AddMinutes(model.EventTime.Minute);
+    try
+    {
+        var eventToSave = new Event
+        {
+            OrganizerId = user.UserId,
+            VenueId = model.VenueId,
+            EventName = model.EventName,
+            EventDescription = model.EventDescription,
+            EventDate = model.EventDate,
+            EventTime = model.EventDate.Date
+                .AddHours(model.EventTime.Hour)
+                .AddMinutes(model.EventTime.Minute)
+        };
 
-        // Save event first so it gets an EventId
-        _context.Events.Add(model);
+        if (MediaFile != null && MediaFile.Length > 0)
+        {
+            Console.WriteLine($"Uploading media: {MediaFile.FileName} | {MediaFile.ContentType}");
+
+            var mediaResult = await SaveMediaFileAsync(MediaFile);
+            eventToSave.MediaPath = mediaResult.MediaPath;
+            eventToSave.MediaType = mediaResult.MediaType;
+
+            Console.WriteLine($"Media saved: {eventToSave.MediaPath} | {eventToSave.MediaType}");
+        }
+
+        _context.Events.Add(eventToSave);
         await _context.SaveChangesAsync();
 
-        // Save all ticket types
+        Console.WriteLine($"Event saved successfully. EventId = {eventToSave.EventId}");
+
         if (TicketTypes != null)
         {
             foreach (var tt in TicketTypes)
             {
-                // Skip empty rows (user added then removed content)
                 if (string.IsNullOrWhiteSpace(tt.Name))
                     continue;
 
-                tt.EventId = model.EventId;
-                _context.TicketTypes.Add(tt);
+                var ticketType = new TicketType
+                {
+                    EventId = eventToSave.EventId,
+                    Name = tt.Name,
+                    Price = tt.Price,
+                    QuantityAvailable = tt.QuantityAvailable,
+                    RequiresSeat = tt.RequiresSeat
+                };
+
+                _context.TicketTypes.Add(ticketType);
             }
 
             await _context.SaveChangesAsync();
+            Console.WriteLine("Ticket types saved successfully.");
         }
 
-        return RedirectToAction("Index");
+        TempData["Success"] = "Event created successfully.";
+        return RedirectToAction("Index", "Dashboard");
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine("CREATE EVENT ERROR: " + ex.Message);
+        Console.WriteLine(ex.StackTrace);
+
+        TempData["Error"] = ex.Message;
+        ViewBag.Venues = await _context.Venues.ToListAsync();
+        return View(model);
+    }
+}
 
     public async Task<IActionResult> Index()
     {
         Console.WriteLine("HIT: Dashboard/Index");
-    
+
         var user = await GetCurrentUserAsync();
         if (user == null)
             return RedirectToAction("PostLogin", "Account");
-    
+
         var myEvents = await _context.Events
             .Where(e => e.OrganizerId == user.UserId)
-            .Include(e => e.Venue)              
+            .Include(e => e.Venue)
             .OrderBy(e => e.EventDate)
             .ToListAsync();
-    
+
         var myTickets = await _context.Tickets
             .Include(t => t.Event)
             .Where(t => t.OwnerUserId == user.UserId)
             .ToListAsync();
-    
+
         var viewModel = new DashboardViewModel
         {
             MyEvents = myEvents,
             MyTickets = myTickets
         };
-    
+
         return View(viewModel);
     }
-    
+
     public async Task<IActionResult> EditEvent(int id)
     {
         var user = await GetCurrentUserAsync();
@@ -130,11 +184,13 @@ public class DashboardController : Controller
 
         return View(ev);
     }
-    
+
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditEvent(
         Event model,
-        List<TicketType> TicketTypes)
+        List<TicketType> TicketTypes,
+        IFormFile? MediaFile)
     {
         var user = await GetCurrentUserAsync();
         if (user == null)
@@ -146,7 +202,6 @@ public class DashboardController : Controller
             return View(model);
         }
 
-        // Load existing event
         var ev = await _context.Events
             .Include(e => e.TicketTypes)
             .FirstOrDefaultAsync(e => e.EventId == model.EventId && e.OrganizerId == user.UserId);
@@ -154,17 +209,23 @@ public class DashboardController : Controller
         if (ev == null)
             return NotFound();
 
-        // Update event fields
         ev.EventName = model.EventName;
         ev.EventDescription = model.EventDescription;
         ev.VenueId = model.VenueId;
-
+        ev.EventDate = model.EventDate;
         ev.EventTime = model.EventDate.Date
             .AddHours(model.EventTime.Hour)
             .AddMinutes(model.EventTime.Minute);
 
-        // --- Ticket Type Sync Logic ---
-        // 1. Update existing ticket types
+        if (MediaFile != null && MediaFile.Length > 0)
+        {
+            DeletePhysicalFile(ev.MediaPath);
+
+            var mediaResult = await SaveMediaFileAsync(MediaFile);
+            ev.MediaPath = mediaResult.MediaPath;
+            ev.MediaType = mediaResult.MediaType;
+        }
+
         foreach (var tt in TicketTypes.Where(t => t.TicketTypeId != 0))
         {
             var existing = ev.TicketTypes.FirstOrDefault(x => x.TicketTypeId == tt.TicketTypeId);
@@ -177,7 +238,6 @@ public class DashboardController : Controller
             }
         }
 
-        // 2. Add new ticket types
         foreach (var tt in TicketTypes.Where(t => t.TicketTypeId == 0))
         {
             if (!string.IsNullOrWhiteSpace(tt.Name))
@@ -187,9 +247,14 @@ public class DashboardController : Controller
             }
         }
 
-        // 3. Remove deleted ticket types
-        var postedIds = TicketTypes.Where(t => t.TicketTypeId != 0).Select(t => t.TicketTypeId).ToList();
-        var toRemove = ev.TicketTypes.Where(t => !postedIds.Contains(t.TicketTypeId)).ToList();
+        var postedIds = TicketTypes
+            .Where(t => t.TicketTypeId != 0)
+            .Select(t => t.TicketTypeId)
+            .ToList();
+
+        var toRemove = ev.TicketTypes
+            .Where(t => !postedIds.Contains(t.TicketTypeId))
+            .ToList();
 
         foreach (var remove in toRemove)
             _context.TicketTypes.Remove(remove);
@@ -198,7 +263,7 @@ public class DashboardController : Controller
 
         return RedirectToAction("Index");
     }
-    
+
     public async Task<IActionResult> DeleteEvent(int id)
     {
         var user = await GetCurrentUserAsync();
@@ -213,7 +278,6 @@ public class DashboardController : Controller
         if (ev == null)
             return NotFound();
 
-        // Calculate total refund for purchased tickets
         var totalRefund = ev.Tickets
             .Where(t => t.OrderId != null)
             .Sum(t => t.Price);
@@ -222,7 +286,6 @@ public class DashboardController : Controller
 
         return View(ev);
     }
-
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -256,13 +319,15 @@ public class DashboardController : Controller
         if (ev.TicketTypes != null)
             _context.TicketTypes.RemoveRange(ev.TicketTypes);
 
+        DeletePhysicalFile(ev.MediaPath);
+
         _context.Events.Remove(ev);
 
         await _context.SaveChangesAsync();
 
         return RedirectToAction("Index");
     }
-    
+
     public async Task<IActionResult> Report(int id)
     {
         var user = await GetCurrentUserAsync();
@@ -314,7 +379,7 @@ public class DashboardController : Controller
 
         return View(vm);
     }
-    
+
     public async Task<IActionResult> ExportEventCsv(int id)
     {
         var user = await GetCurrentUserAsync();
@@ -361,8 +426,7 @@ public class DashboardController : Controller
 
         return File(bytes, "text/csv", fileName);
     }
-    
-    // GET: Dashboard/Venues
+
     public async Task<IActionResult> Venues()
     {
         var user = await GetCurrentUserAsync();
@@ -372,13 +436,14 @@ public class DashboardController : Controller
         var venues = await _context.Venues.ToListAsync();
         return View(venues);
     }
-    
+
     public IActionResult AddVenue()
     {
         return View();
     }
-    
+
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddVenue(Venue venue)
     {
         if (!ModelState.IsValid)
@@ -389,7 +454,7 @@ public class DashboardController : Controller
 
         return RedirectToAction("Venues");
     }
-    
+
     public async Task<IActionResult> DeleteVenue(int id)
     {
         var venue = await _context.Venues
@@ -399,7 +464,6 @@ public class DashboardController : Controller
         if (venue == null)
             return NotFound();
 
-        // Check if any events use this venue
         bool hasEvents = await _context.Events.AnyAsync(e => e.VenueId == id);
         if (hasEvents)
         {
@@ -409,8 +473,9 @@ public class DashboardController : Controller
 
         return View(venue);
     }
-    
+
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteVenueConfirmed(int venueId)
     {
         var venue = await _context.Venues.FindAsync(venueId);
@@ -423,7 +488,47 @@ public class DashboardController : Controller
         TempData["Success"] = "Venue deleted successfully.";
         return RedirectToAction("Venues");
     }
-    
+
+    private async Task<(string MediaPath, string MediaType)> SaveMediaFileAsync(IFormFile mediaFile)
+    {
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "events");
+
+        if (!Directory.Exists(uploadsFolder))
+        {
+            Directory.CreateDirectory(uploadsFolder);
+        }
+
+        var extension = Path.GetExtension(mediaFile.FileName).ToLowerInvariant();
+        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await mediaFile.CopyToAsync(stream);
+        }
+
+        var mediaPath = $"/uploads/events/{uniqueFileName}";
+        var mediaType = mediaFile.ContentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase)
+            ? "video"
+            : "image";
+
+        return (mediaPath, mediaType);
+    }
+
+    private void DeletePhysicalFile(string? mediaPath)
+    {
+        if (string.IsNullOrWhiteSpace(mediaPath))
+            return;
+
+        var relativePath = mediaPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+        var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath);
+
+        if (System.IO.File.Exists(fullPath))
+        {
+            System.IO.File.Delete(fullPath);
+        }
+    }
+
     private async Task<User?> GetCurrentUserAsync()
     {
         var auth0Id =

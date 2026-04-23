@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace EventMaster.Models;
@@ -20,6 +22,8 @@ public class Event
     [ValidateNever]
     public Venue Venue { get; set; }
     
+    public string? MediaPath { get; set; }
+    public string? MediaType { get; set; }
     public List<TicketType> TicketTypes { get; set; } = new();
     public List<Ticket> Tickets { get; set; } = new();
 }

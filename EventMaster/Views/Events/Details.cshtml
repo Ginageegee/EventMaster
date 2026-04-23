@@ -12,6 +12,25 @@
     @ev.EventDate.ToString("yyyy-MM-dd") @ev.EventTime.ToString("HH:mm")
 </div>
 
+@if (!string.IsNullOrWhiteSpace(ev.MediaPath))
+{
+    @if (ev.MediaType == "image")
+    {
+        <div class="mb-4">
+            <img src="@ev.MediaPath" alt="Event media" class="img-fluid rounded shadow-sm" style="max-height: 500px; width: 100%; object-fit: cover;" />
+        </div>
+    }
+    else if (ev.MediaType == "video")
+    {
+        <div class="mb-4">
+            <video controls class="w-100 rounded shadow-sm" style="max-height: 500px; object-fit: cover;">
+                <source src="@ev.MediaPath" />
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    }
+}
+
 <p>@ev.EventDescription</p>
 
 @if (TempData["Error"] is string err)

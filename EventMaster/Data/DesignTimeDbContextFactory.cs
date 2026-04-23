@@ -1,6 +1,6 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Configuration;
 
 namespace EventMaster.Data;
 
@@ -8,19 +8,13 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
 {
     public ApplicationDbContext CreateDbContext(string[] args)
     {
-        // Load configuration manually for design-time
-        var config = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false)
-            .AddJsonFile("appsettings.Development.json", optional: true)
-            .Build();
-
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-        var connectionString = config.GetConnectionString("DefaultConnection");
+
+        var connectionString = "server=localhost;port=3307;database=eventmaster;user=root;password=RootPass123!";
 
         optionsBuilder.UseMySql(
             connectionString,
-            ServerVersion.AutoDetect(connectionString)
+            new MySqlServerVersion(new Version(8, 0, 36))
         );
 
         return new ApplicationDbContext(optionsBuilder.Options);

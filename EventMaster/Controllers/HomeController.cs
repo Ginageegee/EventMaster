@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using EventMaster.Models;
+using Microsoft.Extensions.Logging;
 
 namespace EventMaster.Controllers;
 

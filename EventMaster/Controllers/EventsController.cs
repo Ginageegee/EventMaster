@@ -1,6 +1,7 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using EventMaster.Data;
-using EventMaster.Models;
-using EventMaster.Services;
 using EventMaster.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,17 +16,26 @@ public class EventsController : Controller
     {
         _context = context;
     }
-    
-    public async Task<IActionResult> Index()
+
+    public async Task<IActionResult> Index(string? searchTerm)
     {
-        var events = await _context.Events
-            .Where(e => e.EventTime >= DateTime.Now)
+        var query = _context.Events
+            .Where(e => e.EventTime >= DateTime.Now);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            query = query.Where(e => e.EventName.Contains(searchTerm));
+        }
+
+        var events = await query
             .OrderBy(e => e.EventTime)
             .ToListAsync();
-    
+
+        ViewBag.SearchTerm = searchTerm;
+
         return View(events);
     }
-    
+
     public async Task<IActionResult> Details(int id)
     {
         var ev = await _context.Events

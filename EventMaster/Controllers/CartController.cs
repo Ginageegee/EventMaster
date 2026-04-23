@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using EventMaster.Data;
 using EventMaster.Models;
 using EventMaster.ViewModels;

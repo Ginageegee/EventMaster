@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace EventMaster.Models;
 
 using System.ComponentModel.DataAnnotations;

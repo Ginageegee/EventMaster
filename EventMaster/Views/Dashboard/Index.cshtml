@@ -42,6 +42,16 @@ ViewData["Title"] = "Organizer Dashboard";
 
 <h2 class="text-white mb-4">Dashboard</h2>
 
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger mb-3">@err</div>
+}
+
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success mb-3">@success</div>
+}
+
 <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
         <a class="nav-link active" data-bs-toggle="tab" href="#events">Your Events</a>

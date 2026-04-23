@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace EventMaster.Models.ViewModels;
 
 public class DashboardViewModel
