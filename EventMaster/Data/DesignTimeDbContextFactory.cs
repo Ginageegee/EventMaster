@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -8,20 +10,37 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
 {
     public ApplicationDbContext CreateDbContext(string[] args)
     {
-        // Load configuration manually for design-time
+        var basePath = Directory.GetCurrentDirectory();
+
+        if (!File.Exists(Path.Combine(basePath, "appsettings.json")))
+        {
+            var fallbackPath = Path.Combine(basePath, "EventMaster");
+
+            if (File.Exists(Path.Combine(fallbackPath, "appsettings.json")))
+            {
+                basePath = fallbackPath;
+            }
+        }
+
         var config = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false)
+            .SetBasePath(basePath)
+            .AddJsonFile("appsettings.json", optional: true)
             .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddUserSecrets<DesignTimeDbContextFactory>(optional: true)
+            .AddEnvironmentVariables()
             .Build();
 
-        var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
         var connectionString = config.GetConnectionString("DefaultConnection");
 
-        optionsBuilder.UseMySql(
-            connectionString,
-            ServerVersion.AutoDetect(connectionString)
-        );
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("DefaultConnection was not found.");
+        }
+
+        var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+        var serverVersion = new MySqlServerVersion(new Version(8, 0, 36));
+
+        optionsBuilder.UseMySql(connectionString, serverVersion);
 
         return new ApplicationDbContext(optionsBuilder.Options);
     }

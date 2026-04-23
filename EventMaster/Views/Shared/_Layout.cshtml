@@ -63,6 +63,18 @@
                     else
                     {
                         <li class="nav-item mx-2">
+                            <a class="nav-link text-dark" asp-controller="Cart" asp-action="MyTickets">
+                                <i class="fa-solid fa-ticket"></i> My Tickets
+                            </a>
+                        </li>
+
+                        <li class="nav-item mx-2">
+                            <a class="nav-link text-dark" asp-controller="Cart" asp-action="Index">
+                                <i class="fa-solid fa-cart-shopping"></i> Cart
+                            </a>
+                        </li>
+
+                        <li class="nav-item mx-2">
                             <a class="nav-link text-dark" asp-controller="Dashboard" asp-action="Index">
                                 <i class="fa-solid fa-user"></i> Dashboard
                             </a>
@@ -72,9 +84,6 @@
                             <a class="nav-link text-dark" asp-controller="Account" asp-action="Logout">
                                 <i class="fa-solid fa-right-from-bracket"></i> Logout
                             </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Cart" asp-action="Index">Cart</a>
                         </li>
                     }
                 </ul>

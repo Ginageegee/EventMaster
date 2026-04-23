@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using EventMaster.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,10 +31,12 @@ builder.Services.AddAuthentication(options =>
         options.GetClaimsFromUserInfoEndpoint = true;
     });
 
-builder.Services.AddDbContext<EventMaster.Data.ApplicationDbContext>(options =>
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     var conn = builder.Configuration.GetConnectionString("DefaultConnection");
-    options.UseMySql(conn, ServerVersion.AutoDetect(conn));
+    var serverVersion = new MySqlServerVersion(new Version(8, 0, 36));
+
+    options.UseMySql(conn, serverVersion);
 });
 
 var app = builder.Build();

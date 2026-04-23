@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-    </PropertyGroup>
+      <UserSecretsId>f557bfe4-0f4a-4e54-9ffe-b151891581d1</UserSecretsId>
+  </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Auth0.AspNetCore.Authentication" Version="1.6.1" />
@@ -15,6 +16,7 @@
       </PackageReference>
       <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.4" />
       <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.0" />
+      <PackageReference Include="Stripe.net" Version="51.0.1" />
     </ItemGroup>
 
     <ItemGroup>
