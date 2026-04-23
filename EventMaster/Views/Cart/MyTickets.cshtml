@@ -1,0 +1,40 @@
+@model IReadOnlyList<EventMaster.Models.Ticket>
+
+@{
+    ViewData["Title"] = "My Tickets";
+}
+
+<h2 class="mb-3">My Tickets</h2>
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">You have not purchased any tickets yet.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+            <tr>
+                <th>Event</th>
+                <th>Ticket Type</th>
+                <th>Status</th>
+                <th>Price</th>
+                <th>QR Code</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var ticket in Model)
+            {
+                <tr>
+                    <td>@ticket.Event?.EventName</td>
+                    <td>@ticket.TicketType?.Name</td>
+                    <td>@ticket.Status</td>
+                    <td>$@ticket.Price.ToString("0.00")</td>
+                    <td><code>@ticket.QrCode</code></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

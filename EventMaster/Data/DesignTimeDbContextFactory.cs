@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
 
 namespace EventMaster.Data;
 
@@ -8,9 +10,34 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
 {
     public ApplicationDbContext CreateDbContext(string[] args)
     {
-        var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+        var basePath = Directory.GetCurrentDirectory();
 
-        var connectionString = "server=localhost;port=3307;database=eventmaster;user=root;password=RootPass123!";
+        if (!File.Exists(Path.Combine(basePath, "appsettings.json")))
+        {
+            var fallbackPath = Path.Combine(basePath, "EventMaster");
+
+            if (File.Exists(Path.Combine(fallbackPath, "appsettings.json")))
+            {
+                basePath = fallbackPath;
+            }
+        }
+
+        var config = new ConfigurationBuilder()
+            .SetBasePath(basePath)
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddUserSecrets<DesignTimeDbContextFactory>(optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+
+        var connectionString = config.GetConnectionString("DefaultConnection");
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("DefaultConnection was not found.");
+        }
+
+        var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
 
         optionsBuilder.UseMySql(
             connectionString,

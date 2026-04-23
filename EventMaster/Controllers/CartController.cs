@@ -1,12 +1,6 @@
 using System;
+using System.IO;
 using System.Linq;
-using EventMaster.Data;
-using EventMaster.Models;
-using EventMaster.ViewModels;
-using EventMaster.Enums;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -16,10 +10,12 @@ namespace EventMaster.Controllers;
 public class CartController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly IConfiguration _configuration;
 
-    public CartController(ApplicationDbContext context)
+    public CartController(ApplicationDbContext context, IConfiguration configuration)
     {
         _context = context;
+        _configuration = configuration;
     }
 
     public async Task<IActionResult> Index()
@@ -76,7 +72,6 @@ public class CartController : Controller
         }
 
         cart.UpdatedAt = DateTime.UtcNow;
-
         await _context.SaveChangesAsync();
 
         return RedirectToAction("Index");
@@ -133,7 +128,6 @@ public class CartController : Controller
         return RedirectToAction("Index");
     }
 
-    // ✅ NEW CHECKOUT METHOD
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Checkout()
@@ -157,7 +151,6 @@ public class CartController : Controller
 
         decimal totalAmount = 0;
 
-        // ✅ Validate inventory
         foreach (var item in cart.Items)
         {
             if (item.TicketType == null)
@@ -176,28 +169,255 @@ public class CartController : Controller
             totalAmount += item.TicketType.Price * item.Quantity;
         }
 
-        // ✅ Create order
+        var stripeSecretKey = _configuration["Stripe:SecretKey"];
+        if (string.IsNullOrWhiteSpace(stripeSecretKey))
+        {
+            TempData["Error"] = "Stripe is not configured yet.";
+            return RedirectToAction("Index");
+        }
+
+        StripeConfiguration.ApiKey = stripeSecretKey;
+
         var order = new Order
         {
             BuyerUserId = user.UserId,
-            Status = OrderStatus.Completed,
+            Status = OrderStatus.InProgress,
             TotalAmount = totalAmount
         };
 
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
 
-        // ✅ Create tickets
+        var payment = new Payment
+        {
+            OrderId = order.OrderId,
+            Amount = totalAmount,
+            Status = PaymentStatus.Pending
+        };
+
+        _context.Payments.Add(payment);
+        await _context.SaveChangesAsync();
+
+        var successUrl = Url.Action(
+            "Success",
+            "Cart",
+            null,
+            Request.Scheme) + "?session_id={CHECKOUT_SESSION_ID}";
+
+        var cancelUrl = Url.Action(
+            "Cancel",
+            "Cart",
+            new { orderId = order.OrderId },
+            Request.Scheme);
+
+        var lineItems = new List<SessionLineItemOptions>();
+
+        foreach (var item in cart.Items)
+        {
+            if (item.TicketType == null) continue;
+
+            var ticketName = item.TicketType.Name;
+
+            if (item.Seat != null && !string.IsNullOrWhiteSpace(item.Seat.SeatNumber))
+            {
+                ticketName += $" (Seat {item.Seat.SeatNumber})";
+            }
+
+            lineItems.Add(new SessionLineItemOptions
+            {
+                Quantity = item.Quantity,
+                PriceData = new SessionLineItemPriceDataOptions
+                {
+                    Currency = "cad",
+                    UnitAmount = (long)(item.TicketType.Price * 100),
+                    ProductData = new SessionLineItemPriceDataProductDataOptions
+                    {
+                        Name = ticketName
+                    }
+                }
+            });
+        }
+
+        var options = new SessionCreateOptions
+        {
+            Mode = "payment",
+            SuccessUrl = successUrl,
+            CancelUrl = cancelUrl,
+            ClientReferenceId = order.OrderId.ToString(),
+            Metadata = new Dictionary<string, string>
+            {
+                ["orderId"] = order.OrderId.ToString(),
+                ["cartId"] = cart.CartId.ToString(),
+                ["buyerUserId"] = user.UserId.ToString()
+            },
+            LineItems = lineItems
+        };
+
+        var service = new SessionService();
+        var session = await service.CreateAsync(options);
+
+        return Redirect(session.Url);
+    }
+
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> Success(string session_id)
+    {
+        if (string.IsNullOrWhiteSpace(session_id))
+            return RedirectToAction("Index");
+
+        var stripeSecretKey = _configuration["Stripe:SecretKey"];
+        if (string.IsNullOrWhiteSpace(stripeSecretKey))
+            return RedirectToAction("Index");
+
+        StripeConfiguration.ApiKey = stripeSecretKey;
+
+        var service = new SessionService();
+        var session = await service.GetAsync(session_id);
+
+        ViewBag.OrderId = session.ClientReferenceId;
+        ViewBag.AmountTotal = session.AmountTotal.HasValue
+            ? session.AmountTotal.Value / 100.0m
+            : 0m;
+
+        return View();
+    }
+
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> Cancel(int orderId)
+    {
+        var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId);
+        var payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId);
+
+        if (order != null && order.Status == OrderStatus.InProgress)
+            order.Status = OrderStatus.Cancelled;
+
+        if (payment != null && payment.Status == PaymentStatus.Pending)
+            payment.Status = PaymentStatus.Cancelled;
+
+        await _context.SaveChangesAsync();
+
+        ViewBag.OrderId = orderId;
+        return View();
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> MyTickets()
+    {
+        var user = await GetCurrentUserAsync();
+        if (user == null)
+            return RedirectToAction("PostLogin", "Account");
+
+        var tickets = await _context.Tickets
+            .Include(t => t.Event)
+            .Include(t => t.TicketType)
+            .Where(t => t.OwnerUserId == user.UserId)
+            .OrderByDescending(t => t.TicketId)
+            .ToListAsync();
+
+        return View(tickets);
+    }
+
+    [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
+    [HttpPost]
+    public async Task<IActionResult> StripeWebhook()
+    {
+        var stripeSecretKey = _configuration["Stripe:SecretKey"];
+        var webhookSecret = _configuration["Stripe:WebhookSecret"];
+
+        if (string.IsNullOrWhiteSpace(stripeSecretKey) || string.IsNullOrWhiteSpace(webhookSecret))
+            return BadRequest();
+
+        StripeConfiguration.ApiKey = stripeSecretKey;
+
+        var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+
+        try
+        {
+            var stripeEvent = EventUtility.ConstructEvent(
+                json,
+                Request.Headers["Stripe-Signature"],
+                webhookSecret
+            );
+
+            if (stripeEvent.Type == "checkout.session.completed")
+            {
+                var session = stripeEvent.Data.Object as Session;
+                if (session != null)
+                    await HandleCompletedCheckoutSession(session);
+            }
+
+            if (stripeEvent.Type == "checkout.session.expired")
+            {
+                var session = stripeEvent.Data.Object as Session;
+                if (session != null)
+                    await HandleExpiredCheckoutSession(session);
+            }
+
+            return Ok();
+        }
+        catch
+        {
+            return BadRequest();
+        }
+    }
+
+    private async Task HandleCompletedCheckoutSession(Session session)
+    {
+        var orderIdRaw = session.ClientReferenceId ?? session.Metadata["orderId"];
+        var cartIdRaw = session.Metadata["cartId"];
+        var buyerUserIdRaw = session.Metadata["buyerUserId"];
+
+        if (!int.TryParse(orderIdRaw, out var orderId) ||
+            !int.TryParse(cartIdRaw, out var cartId) ||
+            !int.TryParse(buyerUserIdRaw, out var buyerUserId))
+        {
+            return;
+        }
+
+        var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId);
+        var payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId);
+        var cart = await _context.Carts
+            .Include(c => c.Items)
+                .ThenInclude(i => i.TicketType)
+            .Include(c => c.Items)
+                .ThenInclude(i => i.Seat)
+            .FirstOrDefaultAsync(c => c.CartId == cartId && c.UserId == buyerUserId);
+
+        if (order == null || payment == null || cart == null || cart.Items == null || !cart.Items.Any())
+            return;
+
+        if (payment.Status == PaymentStatus.Succeeded)
+            return;
+
         foreach (var item in cart.Items)
         {
             if (item.TicketType == null)
-                continue;
-
-            // reduce inventory
-            if (item.TicketType.QuantityAvailable.HasValue)
             {
-                item.TicketType.QuantityAvailable -= item.Quantity;
+                order.Status = OrderStatus.Cancelled;
+                payment.Status = PaymentStatus.Failed;
+                await _context.SaveChangesAsync();
+                return;
             }
+
+            var available = item.TicketType.QuantityAvailable ?? 0;
+            if (available < item.Quantity)
+            {
+                order.Status = OrderStatus.Cancelled;
+                payment.Status = PaymentStatus.Failed;
+                await _context.SaveChangesAsync();
+                return;
+            }
+        }
+
+        foreach (var item in cart.Items)
+        {
+            if (item.TicketType == null) continue;
+
+            item.TicketType.QuantityAvailable = (item.TicketType.QuantityAvailable ?? 0) - item.Quantity;
 
             for (int i = 0; i < item.Quantity; i++)
             {
@@ -207,9 +427,9 @@ public class CartController : Controller
                     TicketTypeId = item.TicketTypeId,
                     SeatId = item.SeatId,
                     OrderId = order.OrderId,
-                    OwnerUserId = user.UserId,
+                    OwnerUserId = buyerUserId,
                     Price = item.TicketType.Price,
-                    QrCode = Guid.NewGuid().ToString(),
+                    QrCode = Guid.NewGuid().ToString("N"),
                     Status = TicketStatus.Active,
                     IsListedForSale = false
                 };
@@ -218,15 +438,31 @@ public class CartController : Controller
             }
         }
 
-        // ✅ Clear cart
+        order.Status = OrderStatus.Completed;
+        payment.Status = PaymentStatus.Succeeded;
+
         _context.CartItems.RemoveRange(cart.Items);
         cart.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+    }
 
-        TempData["Success"] = "Checkout successful! Your tickets have been created.";
+    private async Task HandleExpiredCheckoutSession(Session session)
+    {
+        var orderIdRaw = session.ClientReferenceId ?? session.Metadata["orderId"];
+        if (!int.TryParse(orderIdRaw, out var orderId))
+            return;
 
-        return RedirectToAction("Index", "Dashboard");
+        var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId);
+        var payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId);
+
+        if (order != null && order.Status == OrderStatus.InProgress)
+            order.Status = OrderStatus.Cancelled;
+
+        if (payment != null && payment.Status == PaymentStatus.Pending)
+            payment.Status = PaymentStatus.Cancelled;
+
+        await _context.SaveChangesAsync();
     }
 
     private async Task<Cart> GetOrCreateCartAsync(int userId)
